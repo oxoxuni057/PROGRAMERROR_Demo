@@ -8,9 +8,18 @@ public class EventZone : MonoBehaviour
     [SerializeField] bool playOnce = true;      // 한 번만 실행할지 (끄면 밟을 때마다 실행)
     [SerializeField] float lockSeconds = 0f;    // 밟은 뒤 플레이어를 몇 초 못 움직이게 할지 (0이면 잠그지 않음)
     [SerializeField] UnityEvent onEnter;        // 밟았을 때 실행할 동작 (Inspector에서 연결)
+    [SerializeField] bool resetOnRollback = true; // [ROLLBACK] 되면 다시 밟을 수 있게 되돌릴지
 
     bool played;             // 이미 실행했는지
     PlayerController player; // 마지막으로 밟은 플레이어
+
+    void OnEnable()  { Rollback.OnRollback += HandleRollback; }
+    void OnDisable() { Rollback.OnRollback -= HandleRollback; }
+
+    void HandleRollback()
+    {
+        if (resetOnRollback) ResetZone();
+    }
 
     // ① 컴포넌트를 처음 붙일 때 콜라이더를 자동으로 "밟을 수 있는 구역(Is Trigger)"으로 바꿈
     void Reset()

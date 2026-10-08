@@ -68,7 +68,12 @@ public class GlitchEffect : MonoBehaviour
         }));
     }
 
-    // ⑤ 암전 풀기
+    // ⑤ 암전 켜기 / 풀기
+    public void ShowBlackout()
+    {
+        blackout.enabled = true;
+    }
+
     public void HideBlackout()
     {
         blackout.enabled = false;
