@@ -13,7 +13,7 @@ public static class Map18Builder
     const string SpriteDir = "Assets/Map/Tiles/Sprites";
     const string TileDir = "Assets/Map/Tiles";
     const string SceneDir = "Assets/Scenes/Map";
-    const string PlayerPrefab = "Assets/Prefabs/Player.prefab";
+
     const int W = 50;
     const int H = 32;
     const int P = 32;
@@ -554,12 +554,6 @@ public static class Map18Builder
         return null;
     }
 
-    class RoomEvent
-    {
-        public string Name;
-        public Vector2 Rel;
-    }
-
     static void BuildFloor(Plan d)
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -645,231 +639,15 @@ public static class Map18Builder
 
         col.gameObject.AddComponent<TilemapCollider2D>();
 
-        var doorRoot = new GameObject("Doors (문)").transform;
-        var doorPos = new Dictionary<Mark, Vector3>();
-        var built = new List<RoomSpec>();
-        var seen = new bool[w, h];
-        for (int x = 0; x < w; x++)
-        {
-            for (int y = 0; y < h; y++)
-            {
-                if (seen[x, y] || !IsDoor(p.G[x, y])) continue;
-                var cells = new List<Vector2Int>();
-                var stack = new Stack<Vector2Int>();
-                stack.Push(new Vector2Int(x, y));
-                seen[x, y] = true;
-                while (stack.Count > 0)
-                {
-                    var c = stack.Pop();
-                    cells.Add(c);
-                    foreach (var n in new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
-                    {
-                        var q = c + n;
-                        if (q.x < 0 || q.y < 0 || q.x >= w || q.y >= h || seen[q.x, q.y] || !IsDoor(p.G[q.x, q.y])) continue;
-                        seen[q.x, q.y] = true;
-                        stack.Push(q);
-                    }
-                }
-
-                Vector2Int dir = Vector2Int.zero;
-                foreach (var c in cells)
-                {
-                    foreach (var n in new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
-                    {
-                        var q = c + n;
-                        if (q.x >= 0 && q.y >= 0 && q.x < w && q.y < h && Walk(p.G[q.x, q.y])) dir = n;
-                    }
-                    if (dir != Vector2Int.zero) break;
-                }
-                if (dir == Vector2Int.zero) continue;
-
-                Mark room = null;
-                bool locked = false;
-                foreach (var c in cells)
-                {
-                    if (p.G[c.x, c.y] == 'x') locked = true;
-                    if (room == null) room = RoomAt(p, c.x - dir.x, c.y - dir.y);
-                }
-                if (room != null && room.Kind == 'L') locked = true;
-
-                int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
-                foreach (var c in cells)
-                {
-                    minX = Mathf.Min(minX, c.x); maxX = Mathf.Max(maxX, c.x);
-                    minY = Mathf.Min(minY, c.y); maxY = Mathf.Max(maxY, c.y);
-                }
-                if (dir == Vector2Int.up) minY -= 1;
-                var center = new Vector3((minX + maxX + 1) * 0.5f, -(minY + maxY + 1) * 0.5f, 0f);
-                var size = new Vector2(maxX - minX + 1, maxY - minY + 1);
-                var front = center + new Vector3(dir.x * (size.x * 0.5f + 1.5f), -dir.y * (size.y * 0.5f + 1.5f), 0f);
-
-                string roomName = room != null ? room.Name : "?";
-                string key = room != null ? Key(p, room) : "";
-                var spec = room != null ? FindSpec(key) : null;
-                var go = new GameObject("Door " + roomName);
-                go.transform.SetParent(doorRoot, false);
-                go.transform.position = center;
-                var box = go.AddComponent<BoxCollider2D>();
-                box.isTrigger = true;
-                box.size = size;
-                var mk = go.AddComponent<MapMarker>();
-                mk.size = size;
-
-                if (spec != null && !locked)
-                {
-                    string target = p.Scene + "_" + spec.Name;
-                    var sd = go.AddComponent<SceneDoor>();
-                    var so = new SerializedObject(sd);
-                    so.FindProperty("targetScene").stringValue = target;
-                    so.FindProperty("targetSpawnId").stringValue = "entrance";
-                    so.ApplyModifiedPropertiesWithoutUndo();
-                    if (!built.Contains(spec))
-                    {
-                        MakeSpawn("Spawn door_" + spec.Name, "door_" + spec.Name, front);
-                        built.Add(spec);
-                    }
-                    mk.label = roomName + " → " + target;
-                    mk.color = new Color(0.5f, 1f, 0.5f);
-                }
-                else
-                {
-                    mk.label = roomName + (locked ? " (잠김)" : " (방 씬 없음: 템플릿 복사해서 연결)");
-                    mk.color = locked ? new Color(0.6f, 0.6f, 0.6f) : new Color(1f, 0.6f, 0.2f);
-                }
-                if (room != null && !doorPos.ContainsKey(room)) doorPos[room] = front;
-            }
-        }
-
-        var labels = new GameObject("Labels (구역 이름표)").transform;
-        foreach (var r in p.Rooms)
-        {
-            if (r.Kind != '-' && r.Kind != 's' && r.Kind != 'o') continue;
-            var go = new GameObject(r.Name);
-            go.transform.SetParent(labels, false);
-            go.transform.position = Center(r);
-            var mk = go.AddComponent<MapMarker>();
-            mk.label = r.Name;
-            mk.color = r.Color;
-            mk.size = new Vector2(r.X1 - r.X0 + 1, r.Y1 - r.Y0 + 1);
-        }
-
-        var roomEvents = new Dictionary<string, List<RoomEvent>>();
-        var events = new GameObject("Events (이벤트 위치)").transform;
-        foreach (var e in p.Events)
-        {
-            int cx = (e.X0 + e.X1) / 2;
-            int cy = (e.Y0 + e.Y1) / 2;
-            var room = RoomAt(p, cx, cy);
-            if (room != null && room.Kind != 's' && room.Kind != 'o')
-            {
-                var spec = FindSpec(Key(p, room));
-                if (spec != null)
-                {
-                    if (!roomEvents.ContainsKey(spec.Name)) roomEvents[spec.Name] = new List<RoomEvent>();
-                    roomEvents[spec.Name].Add(new RoomEvent
-                    {
-                        Name = e.Name,
-                        Rel = new Vector2((cx - room.X0 + 0.5f) / (room.X1 - room.X0 + 1), (cy - room.Y0 + 0.5f) / (room.Y1 - room.Y0 + 1))
-                    });
-                    continue;
-                }
-            }
-            var pos = Center(e);
-            Vector3 dp;
-            if (room != null && room.Kind != 's' && room.Kind != 'o' && doorPos.TryGetValue(room, out dp)) pos = dp;
-            MakeEvent(events, e.Name, pos, new Vector2(e.X1 - e.X0 + 1, e.Y1 - e.Y0 + 1));
-        }
-
-        if (p.Patrol.Count > 0)
-        {
-            var path = new GameObject("PatrolPath 그녀 순찰 경로").transform;
-            for (int i = 0; i < p.Patrol.Count; i++)
-            {
-                var wp = new GameObject("Waypoint " + (i + 1));
-                wp.transform.SetParent(path, false);
-                wp.transform.position = Center(p.Patrol[i]);
-                var mk = wp.AddComponent<MapMarker>();
-                mk.label = "순찰 " + (i + 1);
-                mk.color = new Color(0.9f, 0.1f, 0.15f);
-                mk.size = new Vector2(0.6f, 0.6f);
-            }
-        }
-
-        if (p.StairsUp != null && p.StairsDown != null)
-        {
-            MakeStairsDoor(p, p.StairsUp, "위층", -1);
-            MakeStairsDoor(p, p.StairsDown, "아래층", 1);
-        }
-        else if (p.StairsUp != null) MakeStairsDoor(p, p.StairsUp, "위층", 0);
-        else if (p.StairsDown != null) MakeStairsDoor(p, p.StairsDown, "아래층", 0);
-
-        var stairsPos = Center(p.Spawn);
-        var spawnPos = stairsPos;
-        if (p.Start.HasValue)
-        {
-            var startRoom = RoomAt(p, p.Start.Value.x, p.Start.Value.y);
-            Vector3 dp;
-            if (startRoom != null && doorPos.TryGetValue(startRoom, out dp)) spawnPos = dp;
-        }
-        MakeSpawn("Spawn stairs", "stairs", stairsPos);
-        MakeSpawn("Spawn default", "default", spawnPos);
-        SetupCommon(spawnPos);
-
         Directory.CreateDirectory(SceneDir);
         string scenePath = SceneDir + "/" + p.Scene + ".unity";
         EditorSceneManager.SaveScene(scene, scenePath);
         AddToBuild(scenePath);
         Debug.Log("[맵] " + scenePath + " 생성 완료");
 
-        foreach (var spec in built)
-        {
-            List<RoomEvent> evs;
-            roomEvents.TryGetValue(spec.Name, out evs);
-            BuildRoom(spec.Type, p.Scene + "_" + spec.Name, spec.Name, p.Scene, "door_" + spec.Name, evs);
-        }
-    }
-
-    static void MakeEvent(Transform parent, string name, Vector3 pos, Vector2 size)
-    {
-        var go = new GameObject("EV " + name);
-        go.transform.SetParent(parent, false);
-        go.transform.position = pos;
-        var box = go.AddComponent<BoxCollider2D>();
-        box.isTrigger = true;
-        box.size = size;
-        go.AddComponent<EventZone>();
-        var mk = go.AddComponent<MapMarker>();
-        mk.label = name;
-        mk.color = new Color(1f, 0.85f, 0.2f);
-        mk.size = size;
-    }
-
-    static void SetupCommon(Vector3 spawnPos)
-    {
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
-        if (prefab != null)
-        {
-            var player = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            player.transform.position = spawnPos;
-        }
-
-        var camGo = new GameObject("Main Camera");
-        camGo.tag = "MainCamera";
-        camGo.transform.position = new Vector3(spawnPos.x, spawnPos.y, -10f);
-        var cam = camGo.AddComponent<Camera>();
-        cam.orthographic = true;
-        cam.orthographicSize = 5.625f;
-        cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color32(14, 13, 8, 255);
-        var ppc = camGo.AddComponent<PixelPerfectCamera>();
-        ppc.assetsPPU = P;
-        ppc.refResolutionX = 640;
-        ppc.refResolutionY = 360;
-        camGo.AddComponent<CameraFollow>();
-
-        var light = new GameObject("Global Light 2D").AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Global;
-        light.intensity = 1f;
+        foreach (var spec in Instances)
+            if (spec.Key.StartsWith(p.Scene + "/"))
+                BuildRoom(spec.Type, p.Scene + "_" + spec.Name, true);
     }
 
     [MenuItem("PROGRAMERROR/맵/기본 방 템플릿 만들기 (교실·식당·화장실)")]
@@ -881,12 +659,12 @@ public static class Map18Builder
 
     static void BuildTemplates()
     {
-        BuildRoom("교실", "_템플릿_교실", "기본 교실", null, null, null);
-        BuildRoom("식당", "_템플릿_식당", "기본 식당", null, null, null);
-        BuildRoom("화장실", "_템플릿_화장실", "기본 화장실", null, null, null);
+        BuildRoom("교실", "_템플릿_교실", false);
+        BuildRoom("식당", "_템플릿_식당", false);
+        BuildRoom("화장실", "_템플릿_화장실", false);
     }
 
-    static void BuildRoom(string type, string sceneName, string label, string returnScene, string returnSpawn, List<RoomEvent> evs)
+    static void BuildRoom(string type, string sceneName, bool addToBuild)
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var t = PrepareTiles();
@@ -961,66 +739,11 @@ public static class Map18Builder
 
         col.gameObject.AddComponent<TilemapCollider2D>();
 
-        var area = new GameObject("Room " + label);
-        area.transform.position = new Vector3(1 + iw * 0.5f, -(3 + ih * 0.5f), 0f);
-        var am = area.AddComponent<MapMarker>();
-        am.label = label + " (" + iw + "x" + ih + "칸)";
-        am.color = new Color(0.4f, 0.9f, 1f);
-        am.size = new Vector2(iw, ih);
-
-        var exit = new GameObject(returnScene != null ? "Door 나가기 → " + returnScene : "Door 나가기 (복사 후 targetScene 설정)");
-        exit.transform.position = new Vector3(doorX + 1f, -(h - 1) - 0.5f, 0f);
-        var box = exit.AddComponent<BoxCollider2D>();
-        box.isTrigger = true;
-        box.size = new Vector2(2f, 1f);
-        var sd = exit.AddComponent<SceneDoor>();
-        var so = new SerializedObject(sd);
-        so.FindProperty("targetScene").stringValue = returnScene ?? "";
-        so.FindProperty("targetSpawnId").stringValue = returnSpawn ?? "";
-        so.ApplyModifiedPropertiesWithoutUndo();
-        var em = exit.AddComponent<MapMarker>();
-        em.label = returnScene != null ? "나가기 → " + returnScene : "나가기 (복사 후 targetScene 설정)";
-        em.color = new Color(0.5f, 1f, 0.5f);
-        em.size = new Vector2(2f, 1f);
-
-        if (evs != null)
-        {
-            var events = new GameObject("Events (이벤트 위치)").transform;
-            foreach (var e in evs)
-                MakeEvent(events, e.Name, new Vector3(1 + e.Rel.x * iw, -(3 + e.Rel.y * ih), 0f), Vector2.one);
-        }
-
-        var spawn = new Vector3(doorX + 1f, -(h - 3) - 0.5f, 0f);
-        MakeSpawn("Spawn entrance", "entrance", spawn);
-        MakeSpawn("Spawn default", "default", spawn);
-        SetupCommon(spawn);
-
         Directory.CreateDirectory(RoomDir);
         string path = RoomDir + "/" + sceneName + ".unity";
         EditorSceneManager.SaveScene(scene, path);
-        if (returnScene != null) AddToBuild(path);
+        if (addToBuild) AddToBuild(path);
         Debug.Log("[맵] " + path + " 생성 완료");
-    }
-
-    static void MakeStairsDoor(Plan p, string target, string dir, int side)
-    {
-        float full = p.Stairs.X1 - p.Stairs.X0 + 1;
-        float width = side == 0 ? full : full / 2f;
-        float dx = side * full / 4f;
-        var go = new GameObject("Stairs " + dir + " → " + target);
-        go.transform.position = new Vector3(Center(p.Stairs).x + dx, -p.Stairs.Y0 - 1f, 0f);
-        var box = go.AddComponent<BoxCollider2D>();
-        box.isTrigger = true;
-        box.size = new Vector2(width, 2f);
-        var door = go.AddComponent<SceneDoor>();
-        var so = new SerializedObject(door);
-        so.FindProperty("targetScene").stringValue = target;
-        so.FindProperty("targetSpawnId").stringValue = "stairs";
-        so.ApplyModifiedPropertiesWithoutUndo();
-        var mk = go.AddComponent<MapMarker>();
-        mk.label = dir + " → " + target + " (E)";
-        mk.color = new Color(0.5f, 1f, 0.5f);
-        mk.size = new Vector2(width, 2f);
     }
 
     static readonly HashSet<char> Thin = new HashSet<char> { 'w', '#', 'd', 'x', 'E', 'M' };
@@ -1109,16 +832,6 @@ public static class Map18Builder
         }
         p.DoorRow('x', 25, locked);
         p.DoorRow('d', 25, doors);
-    }
-
-    static void MakeSpawn(string name, string id, Vector3 pos)
-    {
-        var go = new GameObject(name);
-        go.transform.position = pos;
-        var sp = go.AddComponent<SpawnPoint>();
-        var so = new SerializedObject(sp);
-        so.FindProperty("id").stringValue = id;
-        so.ApplyModifiedPropertiesWithoutUndo();
     }
 
     static void AutoDecor(Plan p, Mark r)
