@@ -36,8 +36,10 @@ public static class Map18Builder
         public List<Mark> Events = new List<Mark>();
         public List<KeyValuePair<Vector2Int, string>> Decor = new List<KeyValuePair<Vector2Int, string>>();
         public Mark Stairs;
-        public string StairsTarget;
+        public string StairsUp;
+        public string StairsDown;
         public Vector2Int Spawn;
+        public Vector2Int? Start;
         public List<Vector2Int> Patrol = new List<Vector2Int>();
 
         public Plan(string scene)
@@ -109,12 +111,36 @@ public static class Map18Builder
         BuildFloor(Floor2());
     }
 
-    [MenuItem("PROGRAMERROR/맵/18관 1층 + 2층 모두 만들기")]
+    [MenuItem("PROGRAMERROR/맵/18관 3층 만들기")]
+    public static void Build3F()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildFloor(Floor3());
+    }
+
+    [MenuItem("PROGRAMERROR/맵/18관 4층 만들기")]
+    public static void Build4F()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildFloor(Floor4());
+    }
+
+    [MenuItem("PROGRAMERROR/맵/18관 5층 만들기")]
+    public static void Build5F()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildFloor(Floor5());
+    }
+
+    [MenuItem("PROGRAMERROR/맵/18관 전체 층 만들기")]
     public static void BuildAll()
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-        BuildFloor(Floor2());
         BuildFloor(Floor1());
+        BuildFloor(Floor2());
+        BuildFloor(Floor4());
+        BuildFloor(Floor5());
+        BuildFloor(Floor3());
     }
 
     static Plan Floor1()
@@ -144,9 +170,9 @@ public static class Map18Builder
         p.Fill(13, 16, 36, 21, 'g');
         p.Label("잔디밭 (뚫림)", 13, 16, 21, 21);
         p.Fill(22, 16, 27, 16, 'w');
-        p.Room("계단 (2층으로)", 22, 17, 27, 21, 's');
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
         p.Stairs = p.Rooms[p.Rooms.Count - 1];
-        p.StairsTarget = "18관_2층";
+        p.StairsUp = "18관_2층";
 
         p.Room("18110", 42, 12, 48, 13, 'c');
         p.Room("18111", 42, 15, 48, 17, 'c');
@@ -218,9 +244,10 @@ public static class Map18Builder
 
         p.Fill(12, 11, 37, 21, 'v');
         p.Label("중정 (뚫린 공간, 난간)", 12, 11, 21, 16);
-        p.Room("계단 (1층으로)", 22, 17, 27, 21, 's');
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
         p.Stairs = p.Rooms[p.Rooms.Count - 1];
-        p.StairsTarget = "18관_1층";
+        p.StairsUp = "18관_3층";
+        p.StairsDown = "18관_1층";
 
         p.Room("18215 랩실", 42, 12, 48, 13, 'l');
         p.Room("18216 랩실", 42, 15, 48, 15, 'l');
@@ -275,6 +302,181 @@ public static class Map18Builder
         p.Patrol.Add(new Vector2Int(39, 9));
         p.Patrol.Add(new Vector2Int(39, 23));
         p.Patrol.Add(new Vector2Int(10, 23));
+
+        p.Spawn = new Vector2Int(25, 23);
+        return p;
+    }
+
+    static Plan Floor3()
+    {
+        var p = new Plan("18관_3층");
+        p.Corridors();
+
+        p.Room("18309", 1, 1, 10, 6, 'c');
+        p.Room("18310", 12, 1, 24, 6, 'c');
+        p.Room("18311", 26, 1, 38, 6, 'c');
+        p.Room("18312 (잠김)", 40, 1, 45, 6, 'L');
+        p.Room("18313 (잠김)", 47, 1, 48, 6, 'L');
+        p.DoorRow('d', 7, 5, 6, 8, 9, 17, 18, 22, 23, 31, 32, 36, 37);
+        p.DoorRow('x', 7, 43, 47);
+
+        p.Room("18308", 1, 12, 7, 16, 'c');
+        p.Room("18307", 1, 18, 7, 20, 'c');
+        p.Door('d', 8, 13, 15);
+        p.Door('d', 8, 18, 20);
+
+        p.Room("18314", 42, 12, 48, 16, 'c');
+        p.Room("18315", 42, 18, 48, 20, 'c');
+        p.Door('d', 41, 13, 15);
+        p.Door('d', 41, 18, 20);
+
+        p.Fill(12, 11, 37, 21, 'v');
+        p.Label("중정 (뚫린 공간, 난간)", 12, 11, 21, 16);
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
+        p.Stairs = p.Rooms[p.Rooms.Count - 1];
+        p.StairsUp = "18관_4층";
+        p.StairsDown = "18관_2층";
+
+        p.Room("여자화장실", 1, 26, 3, 30, 'r');
+        p.Room("남자화장실", 5, 26, 6, 30, 'r');
+        p.Room("18306 (잠김)", 8, 26, 8, 30, 'L');
+        p.Room("18306-1 (잠김)", 10, 26, 10, 30, 'L');
+        p.Room("18306-2 (잠김)", 12, 26, 12, 30, 'L');
+        p.Room("18305-1 (잠김)", 14, 26, 14, 30, 'L');
+        p.Room("18305", 16, 26, 19, 30, 'c');
+        p.Room("18304 (잠김)", 21, 26, 21, 30, 'L');
+        p.Room("18303", 23, 26, 30, 30, 'c');
+        p.Room("18302 랩실", 32, 26, 35, 30, 'l');
+        p.Room("18301 랩실", 37, 26, 42, 30, 'l');
+        p.Room("남자화장실", 44, 26, 45, 30, 'r');
+        p.Room("여자화장실", 47, 26, 48, 30, 'r');
+        p.DoorRow('d', 25, 2, 3, 5, 6, 16, 17, 23, 24, 32, 33, 37, 38, 44, 45, 47, 48);
+        p.DoorRow('x', 25, 8, 10, 12, 14, 21);
+
+        p.Door('E', 0, 8, 10);
+        p.Door('E', 49, 8, 10);
+
+        p.Put("extinguisher", 38, 8);
+        p.Put("extinguisher", 38, 22);
+
+        p.Event("1 18310: 멈춘 친구, 칠판에 주인공 이름 (지우면 ROLLBACK)", 17, 2, 17, 2);
+        p.Event("2 복도: ??? 에게 끌려나와 대화, 공통 1번 받음 (플레이 시작)", 17, 9, 17, 9);
+        p.Event("3 18311 빈 강의실: 출석 부르는 소리 (튜토리얼)", 31, 2, 31, 2);
+        p.Event("4 18308: 공통 2번 쪽지", 4, 12, 4, 12);
+        p.Event("5 18314: 공통 3번 쪽지", 44, 12, 44, 12);
+        p.Event("6 중앙 계단: 층수 표시 오류 (확인하러 올라가면 ROLLBACK)", 25, 23, 25, 23);
+        p.Event("(제안) 칠판·출석 규칙 쪽지", 34, 9, 34, 9);
+
+        p.Spawn = new Vector2Int(25, 23);
+        p.Start = new Vector2Int(16, 4);
+        return p;
+    }
+
+    static Plan Floor4()
+    {
+        var p = new Plan("18관_4층");
+        p.Corridors();
+
+        p.Room("18419", 1, 1, 10, 6, 'c');
+        p.Room("18420", 12, 1, 20, 6, 'c');
+        p.Room("18420-1 (잠김)", 22, 1, 24, 6, 'L');
+        p.Room("18421", 26, 1, 34, 6, 'c');
+        p.Room("18421-1 (잠김)", 36, 1, 38, 6, 'L');
+        p.Room("18422 (잠김)", 40, 1, 45, 6, 'L');
+        p.Room("18423 (잠김)", 47, 1, 48, 6, 'L');
+        p.DoorRow('d', 7, 5, 6, 8, 9, 15, 16, 18, 19, 29, 30, 32, 33);
+        p.DoorRow('x', 7, 22, 36, 42, 47);
+
+        p.Room("18418", 1, 12, 7, 16, 'c');
+        p.Room("18417", 1, 18, 7, 20, 'c');
+        p.Door('d', 8, 13, 15);
+        p.Door('d', 8, 18, 20);
+
+        p.Room("18424", 42, 12, 48, 16, 'c');
+        p.Room("18425", 42, 18, 48, 20, 'c');
+        p.Door('d', 41, 13, 15);
+        p.Door('d', 41, 18, 20);
+
+        p.Fill(12, 11, 37, 21, 'v');
+        p.Label("중정 (뚫린 공간, 난간)", 12, 11, 21, 16);
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
+        p.Stairs = p.Rooms[p.Rooms.Count - 1];
+        p.StairsUp = "18관_5층";
+        p.StairsDown = "18관_3층";
+
+        p.Room("여자화장실", 1, 26, 3, 30, 'r');
+        p.Room("남자화장실", 5, 26, 6, 30, 'r');
+        SmallRooms(p, 4, new[]
+        {
+            new[] { 16, 8, 9 }, new[] { 15, 11, 11 }, new[] { 14, 13, 13 }, new[] { 13, 15, 15 },
+            new[] { 12, 17, 17 }, new[] { 11, 19, 19 }, new[] { 10, 21, 22 }, new[] { 9, 24, 25 },
+            new[] { 8, 27, 27 }, new[] { 7, 29, 29 }, new[] { 6, 31, 31 }, new[] { 5, 33, 33 },
+            new[] { 4, 35, 35 }, new[] { 3, 37, 37 }, new[] { 2, 39, 39 }, new[] { 1, 41, 42 }
+        }, new[] { 2, 3, 5, 6, 44, 45, 47, 48 }, new[] { 8, 11, 13, 15, 17, 19, 21, 24, 27, 29, 31, 33, 35, 37, 39, 41 });
+        p.Room("남자화장실", 44, 26, 45, 30, 'r');
+        p.Room("여자화장실", 47, 26, 48, 30, 'r');
+
+        p.Door('E', 0, 8, 10);
+        p.Door('E', 49, 8, 10);
+
+        p.Put("extinguisher", 11, 8);
+        p.Put("extinguisher", 11, 22);
+        p.Put("extinguisher", 38, 22);
+
+        p.Event("1 계단 무한 반복 구간: 내려가도 다시 4층 → 복도 끝까지 걷기", 25, 23, 25, 23);
+        p.Event("2 경사로 위 쪽길 통로 (산으로 연결, 1챕터에서는 막힘)", 48, 9, 48, 9);
+
+        p.Spawn = new Vector2Int(25, 23);
+        return p;
+    }
+
+    static Plan Floor5()
+    {
+        var p = new Plan("18관_5층");
+        p.Corridors();
+
+        p.Room("18518", 1, 1, 10, 6, 'c');
+        p.Room("18519", 12, 1, 24, 6, 'c');
+        p.Room("18520", 26, 1, 38, 6, 'c');
+        p.Room("18521 (잠김)", 40, 1, 45, 6, 'L');
+        p.Room("18522 (잠김)", 47, 1, 48, 6, 'L');
+        p.DoorRow('d', 7, 5, 6, 8, 9, 17, 18, 22, 23, 31, 32, 36, 37);
+        p.DoorRow('x', 7, 43, 47);
+
+        p.Room("18517", 1, 12, 7, 20, 'c');
+        p.Door('d', 8, 12, 14);
+        p.Door('d', 8, 18, 20);
+
+        p.Room("18523", 42, 12, 48, 20, 'c');
+        p.Door('d', 41, 12, 14);
+        p.Door('d', 41, 18, 20);
+
+        p.Fill(12, 11, 37, 21, 'v');
+        p.Label("중정 (뚫린 공간, 난간)", 12, 11, 21, 16);
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
+        p.Stairs = p.Rooms[p.Rooms.Count - 1];
+        p.StairsDown = "18관_4층";
+
+        p.Room("여자화장실", 1, 26, 3, 30, 'r');
+        p.Room("남자화장실", 5, 26, 6, 30, 'r');
+        SmallRooms(p, 5, new[]
+        {
+            new[] { 16, 8, 9 }, new[] { 15, 11, 11 }, new[] { 14, 13, 13 }, new[] { 13, 15, 15 },
+            new[] { 12, 17, 17 }, new[] { 11, 19, 19 }, new[] { 10, 21, 22 }, new[] { 9, 24, 25 },
+            new[] { 8, 27, 27 }, new[] { 7, 29, 29 }, new[] { 6, 31, 31 }, new[] { 5, 33, 33 },
+            new[] { 4, 35, 35 }, new[] { 3, 37, 37 }, new[] { 2, 39, 39 }, new[] { 1, 41, 42 }
+        }, new[] { 2, 3, 5, 6, 44, 45, 47, 48 }, new[] { 8, 11, 13, 15, 17, 19, 21, 24, 27, 29, 31, 33, 35, 37, 39, 41 });
+        p.Room("남자화장실", 44, 26, 45, 30, 'r');
+        p.Room("여자화장실", 47, 26, 48, 30, 'r');
+
+        p.Door('E', 0, 8, 10);
+        p.Door('E', 49, 8, 10);
+
+        p.Put("extinguisher", 38, 8);
+        p.Put("extinguisher", 38, 22);
+
+        p.Label("5층: 1챕터에서는 잠긴 층 (이후 챕터용)", 12, 17, 21, 21);
+        p.Event("1 계단 층수 표시판이 5층으로 바뀌는 연출 (실제로 오는 층은 아님)", 25, 23, 25, 23);
 
         p.Spawn = new Vector2Int(25, 23);
         return p;
@@ -368,19 +570,17 @@ public static class Map18Builder
             }
         }
 
-        var stairs = new GameObject("Stairs → " + p.StairsTarget);
-        stairs.transform.position = Center(p.Stairs) + new Vector3(0f, 1.5f, 0f);
-        var sbox = stairs.AddComponent<BoxCollider2D>();
-        sbox.isTrigger = true;
-        sbox.size = new Vector2(6f, 2f);
-        var door = stairs.AddComponent<SceneDoor>();
-        var so = new SerializedObject(door);
-        so.FindProperty("targetScene").stringValue = p.StairsTarget;
-        so.FindProperty("targetSpawnId").stringValue = "stairs";
-        so.ApplyModifiedPropertiesWithoutUndo();
+        if (p.StairsUp != null && p.StairsDown != null)
+        {
+            MakeStairsDoor(p, p.StairsUp, "위층", -1.5f, 3f);
+            MakeStairsDoor(p, p.StairsDown, "아래층", 1.5f, 3f);
+        }
+        else if (p.StairsUp != null) MakeStairsDoor(p, p.StairsUp, "위층", 0f, 6f);
+        else if (p.StairsDown != null) MakeStairsDoor(p, p.StairsDown, "아래층", 0f, 6f);
 
-        var spawnPos = Center(p.Spawn);
-        MakeSpawn("Spawn stairs", "stairs", spawnPos);
+        var stairsPos = Center(p.Spawn);
+        var spawnPos = p.Start.HasValue ? Center(p.Start.Value) : stairsPos;
+        MakeSpawn("Spawn stairs", "stairs", stairsPos);
         MakeSpawn("Spawn default", "default", spawnPos);
 
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
@@ -413,6 +613,34 @@ public static class Map18Builder
         EditorSceneManager.SaveScene(scene, scenePath);
         AddToBuild(scenePath);
         Debug.Log("[맵] " + scenePath + " 생성 완료");
+    }
+
+    static void MakeStairsDoor(Plan p, string target, string dir, float dx, float width)
+    {
+        var go = new GameObject("Stairs " + dir + " → " + target);
+        go.transform.position = Center(p.Stairs) + new Vector3(dx, 1.5f, 0f);
+        var box = go.AddComponent<BoxCollider2D>();
+        box.isTrigger = true;
+        box.size = new Vector2(width, 2f);
+        var door = go.AddComponent<SceneDoor>();
+        var so = new SerializedObject(door);
+        so.FindProperty("targetScene").stringValue = target;
+        so.FindProperty("targetSpawnId").stringValue = "stairs";
+        so.ApplyModifiedPropertiesWithoutUndo();
+        var mk = go.AddComponent<MapMarker>();
+        mk.label = dir + " → " + target + " (E)";
+        mk.color = new Color(0.5f, 1f, 0.5f);
+        mk.size = new Vector2(width, 2f);
+    }
+
+    static void SmallRooms(Plan p, int floor, int[][] rooms, int[] doors, int[] locked)
+    {
+        foreach (var r in rooms)
+        {
+            p.Room((18000 + floor * 100 + r[0]) + " (잠김)", r[1], 26, r[2], 30, 'L');
+        }
+        p.DoorRow('x', 25, locked);
+        p.DoorRow('d', 25, doors);
     }
 
     static void MakeSpawn(string name, string id, Vector3 pos)
