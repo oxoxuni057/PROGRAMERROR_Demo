@@ -23,6 +23,33 @@ EditorBuildSettings:
   - enabled: 1
     path: "Assets/Scenes/Map/18\uAD00_3\uCE35.unity"
     guid: 01419b5288a09384194931bbbb039dee
+  - enabled: 1
+    path: "Assets/Scenes/Map/Rooms/18\uAD00_1\uCE35_\uD559\uC0DD\uC2DD\uB2F9.unity"
+    guid: af41d358e279dda4983a511d9190bce6
+  - enabled: 1
+    path: "Assets/Scenes/Map/Rooms/18\uAD00_2\uCE35_18209.unity"
+    guid: af7dd5425e3848440a18e56c6d0786a3
+  - enabled: 1
+    path: "Assets/Scenes/Map/Rooms/18\uAD00_2\uCE35_18204-1.unity"
+    guid: f8bc279e151cd714097155f705422d8f
+  - enabled: 1
+    path: "Assets/Scenes/Map/Rooms/18\uAD00_2\uCE35_18212.unity"
+    guid: 5649b120820026b45a044b16ae12e4f7
+  - enabled: 1
+    path: "Assets/Scenes/Map/Rooms/18\uAD00_2\uCE35_\uC5EC\uC790\uD654\uC7A5\uC2E4_\uC624\uB978\uCABD.unity"
+    guid: 15ef8971a923ae14089d6ed49ce51281
+  - enabled: 1
+    path: "Assets/Scenes/Map/Rooms/18\uAD00_3\uCE35_18308.unity"
+    guid: a6eb19145688d5443a7d364634113b55
+  - enabled: 1
+    path: "Assets/Scenes/Map/Rooms/18\uAD00_3\uCE35_18310.unity"
+    guid: db3af45478a757a43b2e5852b4d87c4a
+  - enabled: 1
+    path: "Assets/Scenes/Map/Rooms/18\uAD00_3\uCE35_18311.unity"
+    guid: 505c7b022bae1504d9074d66fd84bfe2
+  - enabled: 1
+    path: "Assets/Scenes/Map/Rooms/18\uAD00_3\uCE35_18314.unity"
+    guid: 99ae8844fdbc7f4489483eb59178601e
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0

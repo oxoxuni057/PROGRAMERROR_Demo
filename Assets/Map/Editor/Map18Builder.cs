@@ -24,6 +24,7 @@ public static class Map18Builder
     {
         public string Name;
         public int X0, Y0, X1, Y1;
+        public int DX;
         public char Kind;
         public Color Color;
     }
@@ -141,6 +142,7 @@ public static class Map18Builder
     public static void BuildAll()
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildTemplates();
         BuildFloor(Floor1());
         BuildFloor(Floor2());
         BuildFloor(Floor4());
@@ -502,11 +504,75 @@ public static class Map18Builder
         return new Vector3(c.x + 0.5f, -c.y - 0.5f, 0f);
     }
 
-    static void BuildFloor(Plan p)
+    class RoomSpec
+    {
+        public string Key;
+        public string Type;
+        public string Name;
+    }
+
+    const string RoomDir = "Assets/Scenes/Map/Rooms";
+    const string LockedText = "문이 잠겨 있다.";
+
+    static readonly RoomSpec[] Instances =
+    {
+        new RoomSpec { Key = "18관_3층/18310@12", Type = "교실", Name = "18310" },
+        new RoomSpec { Key = "18관_3층/18311@26", Type = "교실", Name = "18311" },
+        new RoomSpec { Key = "18관_3층/18308@1", Type = "교실", Name = "18308" },
+        new RoomSpec { Key = "18관_3층/18314@42", Type = "교실", Name = "18314" },
+        new RoomSpec { Key = "18관_2층/18204-1@20", Type = "교실", Name = "18204-1" },
+        new RoomSpec { Key = "18관_2층/18209@1", Type = "교실", Name = "18209" },
+        new RoomSpec { Key = "18관_2층/18212@26", Type = "교실", Name = "18212" },
+        new RoomSpec { Key = "18관_2층/여자화장실@47", Type = "화장실", Name = "여자화장실_오른쪽" },
+        new RoomSpec { Key = "18관_1층/학생식당@13", Type = "식당", Name = "학생식당" }
+    };
+
+    static readonly Dictionary<string, string> DoorTexts = new Dictionary<string, string>
+    {
+        { "18관_2층/18217 불 켜진 랩실@42", "문틈으로 불빛이 새어 나온다." }
+    };
+
+    static bool Walk(char c)
+    {
+        return c == '.' || c == 'o' || c == 's';
+    }
+
+    static bool IsDoor(char c)
+    {
+        return c == 'd' || c == 'x';
+    }
+
+    static string Key(Plan p, Mark r)
+    {
+        return p.Scene + "/" + r.Name + "@" + r.DX;
+    }
+
+    static RoomSpec FindSpec(string key)
+    {
+        foreach (var s in Instances) if (s.Key == key) return s;
+        return null;
+    }
+
+    static Mark RoomAt(Plan p, int x, int y)
+    {
+        foreach (var r in p.Rooms)
+            if (r.Kind != '-' && x >= r.X0 && x <= r.X1 && y >= r.Y0 && y <= r.Y1) return r;
+        return null;
+    }
+
+    class RoomEvent
+    {
+        public string Name;
+        public Vector2 Rel;
+    }
+
+    static void BuildFloor(Plan d)
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var t = PrepareTiles();
-        p = Scale(p);
+        var p = Scale(d);
+        int w = p.G.GetLength(0);
+        int h = p.G.GetLength(1);
 
         var grid = new GameObject("Grid").AddComponent<Grid>();
         var floor = MakeMap(grid, "Floor", -20, true);
@@ -514,29 +580,188 @@ public static class Map18Builder
         var walls = MakeMap(grid, "Walls", -5, true);
         var col = MakeMap(grid, "Collision", 0, false);
 
-        for (int x = 0; x < p.G.GetLength(0); x++)
+        var wt = new string[w, h];
+        for (int x = 0; x < w; x++)
         {
-            for (int y = 0; y < p.G.GetLength(1); y++)
+            for (int y = 0; y < h; y++)
             {
                 char c = p.G[x, y];
-                var pos = Cell(x, y);
-                floor.SetTile(pos, t[FloorName(c)]);
-                string wall = WallName(c);
-                if (wall != null) walls.SetTile(pos, t[wall]);
-                if (Solid.Contains(c)) col.SetTile(pos, t["collision"]);
+                if (Walk(c)) floor.SetTile(Cell(x, y), t[FloorName(c)]);
+                else
+                {
+                    floor.SetTile(Cell(x, y), t[c == 'g' ? "grass" : "void"]);
+                    col.SetTile(Cell(x, y), t["collision"]);
+                }
             }
         }
 
-        foreach (var r in p.Rooms) AutoDecor(p, r);
-        foreach (var d in p.Decor) decor.SetTile(Cell(d.Key.x, d.Key.y), t[d.Value]);
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 1; y < h; y++)
+            {
+                if (!Walk(p.G[x, y])) continue;
+                char a = p.G[x, y - 1];
+                if (Walk(a) || a == 'v' || a == 'g') continue;
+                bool door = IsDoor(a);
+                wt[x, y - 1] = door ? "door_lower" : "face_lower";
+                if (y >= 2 && !Walk(p.G[x, y - 2])) wt[x, y - 2] = door ? "door_upper" : "face_upper";
+                if (y >= 3 && !Walk(p.G[x, y - 3]) && wt[x, y - 3] == null) wt[x, y - 3] = "wall_edge";
+            }
+        }
+
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                char c = p.G[x, y];
+                if (Walk(c) || wt[x, y] != null) continue;
+                bool near4 = false;
+                bool near8 = false;
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    for (int dy = -1; dy <= 1; dy++)
+                    {
+                        int nx = x + dx;
+                        int ny = y + dy;
+                        if ((dx == 0 && dy == 0) || nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                        if (!Walk(p.G[nx, ny])) continue;
+                        near8 = true;
+                        if (dx == 0 || dy == 0) near4 = true;
+                    }
+                }
+                if (c == 'v' || c == 'g')
+                {
+                    if (near4) wt[x, y] = "railing";
+                    continue;
+                }
+                if (!near8) continue;
+                if (c == 'E') wt[x, y] = "exit";
+                else if (c == 'M') wt[x, y] = "main_door";
+                else if (IsDoor(c) && near4) wt[x, y] = "door";
+                else wt[x, y] = "wall_edge";
+            }
+        }
+
+        for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
+                if (wt[x, y] != null) walls.SetTile(Cell(x, y), t[wt[x, y]]);
+
+        foreach (var dc in p.Decor)
+            if (Walk(p.G[dc.Key.x, dc.Key.y])) decor.SetTile(Cell(dc.Key.x, dc.Key.y), t[dc.Value]);
 
         col.gameObject.AddComponent<TilemapCollider2D>();
 
-        var rooms = new GameObject("Rooms (방 이름표)").transform;
+        var doorRoot = new GameObject("Doors (문)").transform;
+        var doorPos = new Dictionary<Mark, Vector3>();
+        var built = new List<RoomSpec>();
+        var seen = new bool[w, h];
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                if (seen[x, y] || !IsDoor(p.G[x, y])) continue;
+                var cells = new List<Vector2Int>();
+                var stack = new Stack<Vector2Int>();
+                stack.Push(new Vector2Int(x, y));
+                seen[x, y] = true;
+                while (stack.Count > 0)
+                {
+                    var c = stack.Pop();
+                    cells.Add(c);
+                    foreach (var n in new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
+                    {
+                        var q = c + n;
+                        if (q.x < 0 || q.y < 0 || q.x >= w || q.y >= h || seen[q.x, q.y] || !IsDoor(p.G[q.x, q.y])) continue;
+                        seen[q.x, q.y] = true;
+                        stack.Push(q);
+                    }
+                }
+
+                Vector2Int dir = Vector2Int.zero;
+                foreach (var c in cells)
+                {
+                    foreach (var n in new[] { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right })
+                    {
+                        var q = c + n;
+                        if (q.x >= 0 && q.y >= 0 && q.x < w && q.y < h && Walk(p.G[q.x, q.y])) dir = n;
+                    }
+                    if (dir != Vector2Int.zero) break;
+                }
+                if (dir == Vector2Int.zero) continue;
+
+                Mark room = null;
+                bool locked = false;
+                foreach (var c in cells)
+                {
+                    if (p.G[c.x, c.y] == 'x') locked = true;
+                    if (room == null) room = RoomAt(p, c.x - dir.x, c.y - dir.y);
+                }
+                if (room != null && room.Kind == 'L') locked = true;
+
+                int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
+                foreach (var c in cells)
+                {
+                    minX = Mathf.Min(minX, c.x); maxX = Mathf.Max(maxX, c.x);
+                    minY = Mathf.Min(minY, c.y); maxY = Mathf.Max(maxY, c.y);
+                }
+                if (dir == Vector2Int.up) minY -= 1;
+                var center = new Vector3((minX + maxX + 1) * 0.5f, -(minY + maxY + 1) * 0.5f, 0f);
+                var size = new Vector2(maxX - minX + 1, maxY - minY + 1);
+                var front = center + new Vector3(dir.x * (size.x * 0.5f + 1.5f), -dir.y * (size.y * 0.5f + 1.5f), 0f);
+
+                string roomName = room != null ? room.Name : "?";
+                string key = room != null ? Key(p, room) : "";
+                var spec = room != null ? FindSpec(key) : null;
+                var go = new GameObject("Door " + roomName);
+                go.transform.SetParent(doorRoot, false);
+                go.transform.position = center;
+                var box = go.AddComponent<BoxCollider2D>();
+                box.isTrigger = true;
+                box.size = size;
+                var mk = go.AddComponent<MapMarker>();
+                mk.size = size;
+
+                if (spec != null && !locked)
+                {
+                    string target = p.Scene + "_" + spec.Name;
+                    var sd = go.AddComponent<SceneDoor>();
+                    var so = new SerializedObject(sd);
+                    so.FindProperty("targetScene").stringValue = target;
+                    so.FindProperty("targetSpawnId").stringValue = "entrance";
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                    if (!built.Contains(spec))
+                    {
+                        MakeSpawn("Spawn door_" + spec.Name, "door_" + spec.Name, front);
+                        built.Add(spec);
+                    }
+                    mk.label = roomName + " → " + target;
+                    mk.color = new Color(0.5f, 1f, 0.5f);
+                }
+                else
+                {
+                    string text;
+                    if (!DoorTexts.TryGetValue(key, out text)) text = LockedText;
+                    var dt = go.AddComponent<DialogueTrigger>();
+                    var so = new SerializedObject(dt);
+                    var lines = so.FindProperty("lines");
+                    lines.arraySize = 1;
+                    var line = lines.GetArrayElementAtIndex(0);
+                    line.FindPropertyRelative("speaker").stringValue = "";
+                    line.FindPropertyRelative("text").stringValue = text;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                    mk.label = roomName + (locked ? " (잠김)" : " (방 씬 없음: 템플릿 복사해서 연결)");
+                    mk.color = locked ? new Color(0.6f, 0.6f, 0.6f) : new Color(1f, 0.6f, 0.2f);
+                }
+                if (room != null && !doorPos.ContainsKey(room)) doorPos[room] = front;
+            }
+        }
+
+        var labels = new GameObject("Labels (구역 이름표)").transform;
         foreach (var r in p.Rooms)
         {
+            if (r.Kind != '-' && r.Kind != 's' && r.Kind != 'o') continue;
             var go = new GameObject(r.Name);
-            go.transform.SetParent(rooms, false);
+            go.transform.SetParent(labels, false);
             go.transform.position = Center(r);
             var mk = go.AddComponent<MapMarker>();
             mk.label = r.Name;
@@ -544,21 +769,31 @@ public static class Map18Builder
             mk.size = new Vector2(r.X1 - r.X0 + 1, r.Y1 - r.Y0 + 1);
         }
 
+        var roomEvents = new Dictionary<string, List<RoomEvent>>();
         var events = new GameObject("Events (이벤트 위치)").transform;
         foreach (var e in p.Events)
         {
-            var go = new GameObject("EV " + e.Name);
-            go.transform.SetParent(events, false);
-            go.transform.position = Center(e);
-            var size = new Vector2(e.X1 - e.X0 + 1, e.Y1 - e.Y0 + 1);
-            var box = go.AddComponent<BoxCollider2D>();
-            box.isTrigger = true;
-            box.size = size;
-            go.AddComponent<EventZone>();
-            var mk = go.AddComponent<MapMarker>();
-            mk.label = e.Name;
-            mk.color = e.Color;
-            mk.size = size;
+            int cx = (e.X0 + e.X1) / 2;
+            int cy = (e.Y0 + e.Y1) / 2;
+            var room = RoomAt(p, cx, cy);
+            if (room != null && room.Kind != 's' && room.Kind != 'o')
+            {
+                var spec = FindSpec(Key(p, room));
+                if (spec != null)
+                {
+                    if (!roomEvents.ContainsKey(spec.Name)) roomEvents[spec.Name] = new List<RoomEvent>();
+                    roomEvents[spec.Name].Add(new RoomEvent
+                    {
+                        Name = e.Name,
+                        Rel = new Vector2((cx - room.X0 + 0.5f) / (room.X1 - room.X0 + 1), (cy - room.Y0 + 0.5f) / (room.Y1 - room.Y0 + 1))
+                    });
+                    continue;
+                }
+            }
+            var pos = Center(e);
+            Vector3 dp;
+            if (room != null && room.Kind != 's' && room.Kind != 'o' && doorPos.TryGetValue(room, out dp)) pos = dp;
+            MakeEvent(events, e.Name, pos, new Vector2(e.X1 - e.X0 + 1, e.Y1 - e.Y0 + 1));
         }
 
         if (p.Patrol.Count > 0)
@@ -585,10 +820,48 @@ public static class Map18Builder
         else if (p.StairsDown != null) MakeStairsDoor(p, p.StairsDown, "아래층", 0);
 
         var stairsPos = Center(p.Spawn);
-        var spawnPos = p.Start.HasValue ? Center(p.Start.Value) : stairsPos;
+        var spawnPos = stairsPos;
+        if (p.Start.HasValue)
+        {
+            var startRoom = RoomAt(p, p.Start.Value.x, p.Start.Value.y);
+            Vector3 dp;
+            if (startRoom != null && doorPos.TryGetValue(startRoom, out dp)) spawnPos = dp;
+        }
         MakeSpawn("Spawn stairs", "stairs", stairsPos);
         MakeSpawn("Spawn default", "default", spawnPos);
+        SetupCommon(spawnPos);
 
+        Directory.CreateDirectory(SceneDir);
+        string scenePath = SceneDir + "/" + p.Scene + ".unity";
+        EditorSceneManager.SaveScene(scene, scenePath);
+        AddToBuild(scenePath);
+        Debug.Log("[맵] " + scenePath + " 생성 완료");
+
+        foreach (var spec in built)
+        {
+            List<RoomEvent> evs;
+            roomEvents.TryGetValue(spec.Name, out evs);
+            BuildRoom(spec.Type, p.Scene + "_" + spec.Name, spec.Name, p.Scene, "door_" + spec.Name, evs);
+        }
+    }
+
+    static void MakeEvent(Transform parent, string name, Vector3 pos, Vector2 size)
+    {
+        var go = new GameObject("EV " + name);
+        go.transform.SetParent(parent, false);
+        go.transform.position = pos;
+        var box = go.AddComponent<BoxCollider2D>();
+        box.isTrigger = true;
+        box.size = size;
+        go.AddComponent<EventZone>();
+        var mk = go.AddComponent<MapMarker>();
+        mk.label = name;
+        mk.color = new Color(1f, 0.85f, 0.2f);
+        mk.size = size;
+    }
+
+    static void SetupCommon(Vector3 spawnPos)
+    {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
         if (prefab != null)
         {
@@ -613,12 +886,136 @@ public static class Map18Builder
         var light = new GameObject("Global Light 2D").AddComponent<Light2D>();
         light.lightType = Light2D.LightType.Global;
         light.intensity = 1f;
+    }
 
-        Directory.CreateDirectory(SceneDir);
-        string scenePath = SceneDir + "/" + p.Scene + ".unity";
-        EditorSceneManager.SaveScene(scene, scenePath);
-        AddToBuild(scenePath);
-        Debug.Log("[맵] " + scenePath + " 생성 완료");
+    [MenuItem("PROGRAMERROR/맵/기본 방 템플릿 만들기 (교실·식당·화장실)")]
+    public static void BuildTemplatesMenu()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildTemplates();
+    }
+
+    static void BuildTemplates()
+    {
+        BuildRoom("교실", "_템플릿_교실", "기본 교실", null, null, null);
+        BuildRoom("식당", "_템플릿_식당", "기본 식당", null, null, null);
+        BuildRoom("화장실", "_템플릿_화장실", "기본 화장실", null, null, null);
+    }
+
+    static void BuildRoom(string type, string sceneName, string label, string returnScene, string returnSpawn, List<RoomEvent> evs)
+    {
+        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        var t = PrepareTiles();
+
+        int iw = type == "식당" ? 20 : type == "화장실" ? 12 : 14;
+        int ih = type == "화장실" ? 10 : 12;
+        int w = iw + 2;
+        int h = ih + 4;
+        string floorTile = type == "식당" ? "floor_cafeteria" : type == "화장실" ? "floor_toilet" : "floor_classroom";
+        int doorX = iw / 2;
+
+        var grid = new GameObject("Grid").AddComponent<Grid>();
+        var floor = MakeMap(grid, "Floor", -20, true);
+        var decor = MakeMap(grid, "Decor", -10, true);
+        var walls = MakeMap(grid, "Walls", -5, true);
+        var wallDecor = MakeMap(grid, "WallDecor", -4, true);
+        var col = MakeMap(grid, "Collision", 0, false);
+
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                bool inside = x >= 1 && x <= iw && y >= 3 && y <= ih + 2;
+                floor.SetTile(Cell(x, y), t[inside ? floorTile : "void"]);
+                if (inside) continue;
+                col.SetTile(Cell(x, y), t["collision"]);
+                string wall = "wall_edge";
+                if (x >= 1 && x <= iw && y == 1) wall = "face_upper";
+                if (x >= 1 && x <= iw && y == 2) wall = "face_lower";
+                if (y == h - 1 && (x == doorX || x == doorX + 1)) wall = "door";
+                walls.SetTile(Cell(x, y), t[wall]);
+            }
+        }
+
+        if (type == "교실")
+        {
+            for (int x = iw / 2 - 3; x <= iw / 2 + 2; x++)
+            {
+                wallDecor.SetTile(Cell(x, 1), t["board_upper"]);
+                wallDecor.SetTile(Cell(x, 2), t["board_lower"]);
+            }
+            decor.SetTile(Cell(iw / 2, 4), t["table"]);
+            decor.SetTile(Cell(iw / 2 + 1, 4), t["table"]);
+            for (int y = 6; y <= ih; y += 2)
+                for (int x = 2; x + 1 <= iw - 1; x += 3)
+                {
+                    decor.SetTile(Cell(x, y), t["desk"]);
+                    decor.SetTile(Cell(x + 1, y), t["desk"]);
+                }
+        }
+        else if (type == "식당")
+        {
+            for (int x = 2; x <= iw - 1; x++) decor.SetTile(Cell(x, 4), t["bench"]);
+            for (int y = 7; y <= ih; y += 3)
+                for (int x = 3; x + 2 <= iw - 1; x += 6)
+                    for (int k = 0; k < 3; k++) decor.SetTile(Cell(x + k, y), t["table"]);
+        }
+        else
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                int x0 = 2 + i * 3;
+                for (int k = 0; k < 2; k++)
+                {
+                    decor.SetTile(Cell(x0 + k, 3), t["stall"]);
+                    decor.SetTile(Cell(x0 + k, 4), t["stall"]);
+                }
+            }
+            for (int x = 2; x <= iw - 1; x++) decor.SetTile(Cell(x, ih - 1), t["bench"]);
+            for (int x = iw - 4; x <= iw - 1; x++) wallDecor.SetTile(Cell(x, 2), t["mirror"]);
+        }
+
+        col.gameObject.AddComponent<TilemapCollider2D>();
+
+        var area = new GameObject("Room " + label);
+        area.transform.position = new Vector3(1 + iw * 0.5f, -(3 + ih * 0.5f), 0f);
+        var am = area.AddComponent<MapMarker>();
+        am.label = label + " (" + iw + "x" + ih + "칸)";
+        am.color = new Color(0.4f, 0.9f, 1f);
+        am.size = new Vector2(iw, ih);
+
+        var exit = new GameObject(returnScene != null ? "Door 나가기 → " + returnScene : "Door 나가기 (복사 후 targetScene 설정)");
+        exit.transform.position = new Vector3(doorX + 1f, -(h - 1) - 0.5f, 0f);
+        var box = exit.AddComponent<BoxCollider2D>();
+        box.isTrigger = true;
+        box.size = new Vector2(2f, 1f);
+        var sd = exit.AddComponent<SceneDoor>();
+        var so = new SerializedObject(sd);
+        so.FindProperty("targetScene").stringValue = returnScene ?? "";
+        so.FindProperty("targetSpawnId").stringValue = returnSpawn ?? "";
+        so.ApplyModifiedPropertiesWithoutUndo();
+        var em = exit.AddComponent<MapMarker>();
+        em.label = returnScene != null ? "나가기 → " + returnScene : "나가기 (복사 후 targetScene 설정)";
+        em.color = new Color(0.5f, 1f, 0.5f);
+        em.size = new Vector2(2f, 1f);
+
+        if (evs != null)
+        {
+            var events = new GameObject("Events (이벤트 위치)").transform;
+            foreach (var e in evs)
+                MakeEvent(events, e.Name, new Vector3(1 + e.Rel.x * iw, -(3 + e.Rel.y * ih), 0f), Vector2.one);
+        }
+
+        var spawn = new Vector3(doorX + 1f, -(h - 3) - 0.5f, 0f);
+        MakeSpawn("Spawn entrance", "entrance", spawn);
+        MakeSpawn("Spawn default", "default", spawn);
+        SetupCommon(spawn);
+
+        Directory.CreateDirectory(RoomDir);
+        string path = RoomDir + "/" + sceneName + ".unity";
+        EditorSceneManager.SaveScene(scene, path);
+        if (returnScene != null) AddToBuild(path);
+        Debug.Log("[맵] " + path + " 생성 완료");
     }
 
     static void MakeStairsDoor(Plan p, string target, string dir, int side)
@@ -667,7 +1064,7 @@ public static class Map18Builder
 
     static Mark ScaleMark(Mark m)
     {
-        return new Mark { Name = m.Name, X0 = S(m.X0), Y0 = S(m.Y0), X1 = S(m.X1 + 1) - 1, Y1 = S(m.Y1 + 1) - 1, Kind = m.Kind, Color = m.Color };
+        return new Mark { Name = m.Name, X0 = S(m.X0), Y0 = S(m.Y0), X1 = S(m.X1 + 1) - 1, Y1 = S(m.Y1 + 1) - 1, Kind = m.Kind, Color = m.Color, DX = m.X0 };
     }
 
     static Vector2Int ScalePoint(Vector2Int v)
@@ -1060,6 +1457,61 @@ public static class Map18Builder
         {
             p.Rect(4, 14, 27, 29, Hex("#BDB69C"));
             p.Rect(6, 16, 25, 27, Hex("#D8DCD0"));
+        }, false);
+
+        t["face_upper"] = MakeTile("face_upper", p =>
+        {
+            p.Fill(floorC);
+            p.Rect(0, 28, 31, 31, Hex("#8F8875"));
+            p.Rect(0, 26, 31, 26, Hex("#9C957F"));
+        }, false);
+
+        t["face_lower"] = MakeTile("face_lower", p =>
+        {
+            p.Fill(floorC);
+            p.Rect(0, 0, 31, 4, Hex("#6E6E60"));
+            p.Rect(0, 5, 31, 5, Hex("#85857A"));
+        }, false);
+
+        t["wall_edge"] = MakeTile("wall_edge", p =>
+        {
+            p.Fill(shadow);
+            p.Frame(0, 0, 31, 31, 2, wall);
+        }, false);
+
+        t["railing"] = MakeTile("railing", p =>
+        {
+            p.Rect(0, 18, 31, 20, Hex("#8A8A7A"));
+            for (int x = 2; x < P; x += 8) p.Rect(x, 6, x + 1, 18, Hex("#8A8A7A"));
+        }, false);
+
+        t["door_upper"] = MakeTile("door_upper", p =>
+        {
+            p.Fill(wood);
+            p.Rect(0, 0, 2, 31, wall);
+            p.Rect(29, 0, 31, 31, wall);
+            p.Rect(0, 29, 31, 31, wall);
+            p.Rect(10, 10, 21, 22, light);
+        }, false);
+
+        t["door_lower"] = MakeTile("door_lower", p =>
+        {
+            p.Fill(wood);
+            p.Rect(0, 0, 2, 31, wall);
+            p.Rect(29, 0, 31, 31, wall);
+            p.Rect(23, 14, 25, 17, light);
+        }, false);
+
+        t["board_upper"] = MakeTile("board_upper", p =>
+        {
+            p.Rect(0, 0, 31, 27, Hex("#3F4A3C"));
+            p.Rect(0, 24, 31, 27, wood);
+        }, false);
+
+        t["board_lower"] = MakeTile("board_lower", p =>
+        {
+            p.Rect(0, 8, 31, 31, Hex("#3F4A3C"));
+            p.Rect(0, 4, 31, 8, wood);
         }, false);
 
         t["collision"] = MakeTile("collision", p =>
