@@ -512,7 +512,6 @@ public static class Map18Builder
     }
 
     const string RoomDir = "Assets/Scenes/Map/Rooms";
-    const string LockedText = "문이 잠겨 있다.";
 
     static readonly RoomSpec[] Instances =
     {
@@ -525,11 +524,6 @@ public static class Map18Builder
         new RoomSpec { Key = "18관_2층/18212@26", Type = "교실", Name = "18212" },
         new RoomSpec { Key = "18관_2층/여자화장실@47", Type = "화장실", Name = "여자화장실_오른쪽" },
         new RoomSpec { Key = "18관_1층/학생식당@13", Type = "식당", Name = "학생식당" }
-    };
-
-    static readonly Dictionary<string, string> DoorTexts = new Dictionary<string, string>
-    {
-        { "18관_2층/18217 불 켜진 랩실@42", "문틈으로 불빛이 새어 나온다." }
     };
 
     static bool Walk(char c)
@@ -739,16 +733,6 @@ public static class Map18Builder
                 }
                 else
                 {
-                    string text;
-                    if (!DoorTexts.TryGetValue(key, out text)) text = LockedText;
-                    var dt = go.AddComponent<DialogueTrigger>();
-                    var so = new SerializedObject(dt);
-                    var lines = so.FindProperty("lines");
-                    lines.arraySize = 1;
-                    var line = lines.GetArrayElementAtIndex(0);
-                    line.FindPropertyRelative("speaker").stringValue = "";
-                    line.FindPropertyRelative("text").stringValue = text;
-                    so.ApplyModifiedPropertiesWithoutUndo();
                     mk.label = roomName + (locked ? " (잠김)" : " (방 씬 없음: 템플릿 복사해서 연결)");
                     mk.color = locked ? new Color(0.6f, 0.6f, 0.6f) : new Color(1f, 0.6f, 0.2f);
                 }
