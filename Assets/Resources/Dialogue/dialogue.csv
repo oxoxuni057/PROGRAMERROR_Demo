@@ -1,0 +1,16 @@
+﻿id,조건,화자,대사,옵션,실행
+# 테스트용 대사 (수빈). 실제 대사는 시나리오 담당이 채우기,,,,,
+friend,,친구,오늘 학식 진짜 별로다.,,
+friend,rule_a_found,친구,……너 그 쪽지 어디서 났어?,,
+???_test,,???,이곳에서 가장 위험한 건 이상 현상 자체가 아니야.,,
+,,주인공,그게 무슨—,끊김,glitch
+,,???,……아무것도 아니야.,대기:1,
+,,주인공,뭔가 숨기고 있어.,속마음,
+red_dress,,그녀,……몇 시야?,,
+,rule_a_found,선택지,아직 시험기간이야,,flag:passed_red_dress; goto:red_dress_safe
+,,선택지,……새벽 3시야,,goto:red_dress_wrong
+red_dress,passed_red_dress,그녀,…………,,
+red_dress_safe,,그녀,……,,
+,,그녀,……믿지 마……,,strike:a
+red_dress_wrong,,그녀,……틀렸어.,,rollback:그녀에게 틀린 대답
+frozen_student,,학생,"(같은 페이지를 넘겼다가, 다시 앞으로 돌아간다.)",,
