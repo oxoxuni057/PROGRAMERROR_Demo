@@ -31,7 +31,7 @@ public static class Map18Builder
     class Plan
     {
         public string Scene;
-        public char[,] G = new char[W, H];
+        public char[,] G;
         public List<Mark> Rooms = new List<Mark>();
         public List<Mark> Events = new List<Mark>();
         public List<KeyValuePair<Vector2Int, string>> Decor = new List<KeyValuePair<Vector2Int, string>>();
@@ -42,12 +42,17 @@ public static class Map18Builder
         public Vector2Int? Start;
         public List<Vector2Int> Patrol = new List<Vector2Int>();
 
-        public Plan(string scene)
+        public Plan(string scene) : this(scene, W, H)
+        {
+        }
+
+        public Plan(string scene, int w, int h)
         {
             Scene = scene;
-            for (int x = 0; x < W; x++)
-                for (int y = 0; y < H; y++)
-                    G[x, y] = (x == 0 || y == 0 || x == W - 1 || y == H - 1) ? '#' : 'w';
+            G = new char[w, h];
+            for (int x = 0; x < w; x++)
+                for (int y = 0; y < h; y++)
+                    G[x, y] = (x == 0 || y == 0 || x == w - 1 || y == h - 1) ? '#' : 'w';
         }
 
         public void Fill(int x0, int y0, int x1, int y1, char c)
@@ -501,6 +506,7 @@ public static class Map18Builder
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var t = PrepareTiles();
+        p = Scale(p);
 
         var grid = new GameObject("Grid").AddComponent<Grid>();
         var floor = MakeMap(grid, "Floor", -20, true);
@@ -508,9 +514,9 @@ public static class Map18Builder
         var walls = MakeMap(grid, "Walls", -5, true);
         var col = MakeMap(grid, "Collision", 0, false);
 
-        for (int x = 0; x < W; x++)
+        for (int x = 0; x < p.G.GetLength(0); x++)
         {
-            for (int y = 0; y < H; y++)
+            for (int y = 0; y < p.G.GetLength(1); y++)
             {
                 char c = p.G[x, y];
                 var pos = Cell(x, y);
@@ -572,11 +578,11 @@ public static class Map18Builder
 
         if (p.StairsUp != null && p.StairsDown != null)
         {
-            MakeStairsDoor(p, p.StairsUp, "위층", -1.5f, 3f);
-            MakeStairsDoor(p, p.StairsDown, "아래층", 1.5f, 3f);
+            MakeStairsDoor(p, p.StairsUp, "위층", -1);
+            MakeStairsDoor(p, p.StairsDown, "아래층", 1);
         }
-        else if (p.StairsUp != null) MakeStairsDoor(p, p.StairsUp, "위층", 0f, 6f);
-        else if (p.StairsDown != null) MakeStairsDoor(p, p.StairsDown, "아래층", 0f, 6f);
+        else if (p.StairsUp != null) MakeStairsDoor(p, p.StairsUp, "위층", 0);
+        else if (p.StairsDown != null) MakeStairsDoor(p, p.StairsDown, "아래층", 0);
 
         var stairsPos = Center(p.Spawn);
         var spawnPos = p.Start.HasValue ? Center(p.Start.Value) : stairsPos;
@@ -615,10 +621,13 @@ public static class Map18Builder
         Debug.Log("[맵] " + scenePath + " 생성 완료");
     }
 
-    static void MakeStairsDoor(Plan p, string target, string dir, float dx, float width)
+    static void MakeStairsDoor(Plan p, string target, string dir, int side)
     {
+        float full = p.Stairs.X1 - p.Stairs.X0 + 1;
+        float width = side == 0 ? full : full / 2f;
+        float dx = side * full / 4f;
         var go = new GameObject("Stairs " + dir + " → " + target);
-        go.transform.position = Center(p.Stairs) + new Vector3(dx, 1.5f, 0f);
+        go.transform.position = new Vector3(Center(p.Stairs).x + dx, -p.Stairs.Y0 - 1f, 0f);
         var box = go.AddComponent<BoxCollider2D>();
         box.isTrigger = true;
         box.size = new Vector2(width, 2f);
@@ -631,6 +640,84 @@ public static class Map18Builder
         mk.label = dir + " → " + target + " (E)";
         mk.color = new Color(0.5f, 1f, 0.5f);
         mk.size = new Vector2(width, 2f);
+    }
+
+    static readonly HashSet<char> Thin = new HashSet<char> { 'w', '#', 'd', 'x', 'E', 'M' };
+    static readonly HashSet<string> Spread = new HashSet<string> { "table", "shelf", "bench" };
+
+    static int S(int i)
+    {
+        return (3 * i + 1) / 2;
+    }
+
+    static char At(Plan d, int i, int j)
+    {
+        if (i < 0 || j < 0 || i >= W || j >= H) return '#';
+        return d.G[i, j];
+    }
+
+    static char Pick(char c, char before, char after, bool second)
+    {
+        char n = second ? after : before;
+        char o = second ? before : after;
+        if (Thin.Contains(n)) return c;
+        if (second || Thin.Contains(o)) return n;
+        return c;
+    }
+
+    static Mark ScaleMark(Mark m)
+    {
+        return new Mark { Name = m.Name, X0 = S(m.X0), Y0 = S(m.Y0), X1 = S(m.X1 + 1) - 1, Y1 = S(m.Y1 + 1) - 1, Kind = m.Kind, Color = m.Color };
+    }
+
+    static Vector2Int ScalePoint(Vector2Int v)
+    {
+        return new Vector2Int(S(v.x), S(v.y));
+    }
+
+    static Plan Scale(Plan d)
+    {
+        var q = new Plan(d.Scene, S(W), S(H));
+        for (int fx = 0; fx < S(W); fx++)
+        {
+            for (int fy = 0; fy < S(H); fy++)
+            {
+                int i = 2 * fx / 3;
+                int j = 2 * fy / 3;
+                char c = d.G[i, j];
+                if (Thin.Contains(c) && S(i + 1) - S(i) == 2)
+                    c = Pick(c, At(d, i - 1, j), At(d, i + 1, j), fx == S(i) + 1);
+                if (Thin.Contains(c) && S(j + 1) - S(j) == 2)
+                    c = Pick(c, At(d, i, j - 1), At(d, i, j + 1), fy == S(j) + 1);
+                q.G[fx, fy] = c;
+            }
+        }
+        foreach (var r in d.Rooms)
+        {
+            var m = ScaleMark(r);
+            q.Rooms.Add(m);
+            if (r == d.Stairs) q.Stairs = m;
+        }
+        foreach (var e in d.Events) q.Events.Add(ScaleMark(e));
+        foreach (var dc in d.Decor)
+        {
+            int x0 = S(dc.Key.x);
+            int y0 = S(dc.Key.y);
+            if (!Spread.Contains(dc.Value))
+            {
+                q.Put(dc.Value, x0, y0);
+                continue;
+            }
+            for (int x = x0; x < S(dc.Key.x + 1); x++)
+                for (int y = y0; y < S(dc.Key.y + 1); y++)
+                    if (y == y0) q.Put(dc.Value, x, y);
+        }
+        foreach (var w in d.Patrol) q.Patrol.Add(ScalePoint(w));
+        q.StairsUp = d.StairsUp;
+        q.StairsDown = d.StairsDown;
+        q.Spawn = ScalePoint(d.Spawn);
+        if (d.Start.HasValue) q.Start = ScalePoint(d.Start.Value);
+        return q;
     }
 
     static void SmallRooms(Plan p, int floor, int[][] rooms, int[] doors, int[] locked)

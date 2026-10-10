@@ -20,6 +20,9 @@ EditorBuildSettings:
   - enabled: 1
     path: "Assets/Scenes/Map/18\uAD00_5\uCE35.unity"
     guid: 604f46316f2ea724d9824fab9004f20a
+  - enabled: 1
+    path: "Assets/Scenes/Map/18\uAD00_3\uCE35.unity"
+    guid: 01419b5288a09384194931bbbb039dee
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0
