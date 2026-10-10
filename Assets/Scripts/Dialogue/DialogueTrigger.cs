@@ -8,6 +8,22 @@ public class DialogueTrigger : Interactable
     [SerializeField] UnityEvent onDialogueEnd;
 
     bool done;
+    bool doneAtCheckpoint;   // 체크포인트 때의 done (ROLLBACK 되면 이걸로 되돌림)
+
+    void OnEnable()
+    {
+        Rollback.OnCheckpoint += SaveState;
+        Rollback.OnRollback += RestoreState;
+    }
+
+    void OnDisable()
+    {
+        Rollback.OnCheckpoint -= SaveState;
+        Rollback.OnRollback -= RestoreState;
+    }
+
+    void SaveState() => doneAtCheckpoint = done;
+    void RestoreState() => done = doneAtCheckpoint;
 
     // E키로 조사했을 때
     public override void Interact(PlayerController player)

@@ -125,7 +125,6 @@ public class RuleBook : MonoBehaviour
     // ───── 화면 부분 ─────
     bool open;
     int page;
-    PlayerController lockedPlayer;
 
     Font font;
     GameObject bookRoot;
@@ -176,8 +175,7 @@ public class RuleBook : MonoBehaviour
         var player = FindFirstObjectByType<PlayerController>();
         if (player != null && !player.CanMove) return;   // 대화 중·씬 이동 중엔 안 열림
 
-        lockedPlayer = player;
-        if (player != null) player.CanMove = false;
+        PlayerController.SetLock(this, true);
 
         open = true;
         page = Mathf.Max(0, (rules.Count - 1) / RulesPerPage);   // 최신 규칙이 있는 쪽부터
@@ -189,8 +187,7 @@ public class RuleBook : MonoBehaviour
     {
         open = false;
         bookRoot.SetActive(false);
-        if (lockedPlayer != null) lockedPlayer.CanMove = true;
-        lockedPlayer = null;
+        PlayerController.SetLock(this, false);
     }
 
     void Refresh()

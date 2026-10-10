@@ -89,8 +89,7 @@ public class SceneTransition : MonoBehaviour
 
     void SetPlayerControl(bool on)
     {
-        var p = FindAnyObjectByType<PlayerController>();
-        if (p != null) p.CanMove = on;
+        PlayerController.SetLock(this, !on);
     }
 
     // ⑤ 화면 전체를 덮는 검은 이미지를 코드로 만듦

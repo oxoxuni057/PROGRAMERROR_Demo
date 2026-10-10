@@ -251,8 +251,7 @@ public class DialogueManager : MonoBehaviour
 
     void SetPlayerControl(bool on)
     {
-        var p = FindAnyObjectByType<PlayerController>();
-        if (p != null) p.CanMove = on;
+        PlayerController.SetLock(this, !on);
     }
 
     // ───────── UI 만들기 ─────────
