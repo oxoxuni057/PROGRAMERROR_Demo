@@ -27,6 +27,7 @@ public class RuleBook : MonoBehaviour
     static readonly List<RuleEntry> rules = new List<RuleEntry>();
     public static IReadOnlyList<RuleEntry> Rules => rules;
     public static bool IsOpen => Instance != null && Instance.open;
+    public static int ClosedFrame { get; private set; } = -1;   // 마지막으로 닫힌 프레임 (Esc가 일시정지까지 여는 것 방지)
 
     const int RulesPerPage = 5;
 
@@ -173,7 +174,7 @@ public class RuleBook : MonoBehaviour
     void Open()
     {
         var player = FindFirstObjectByType<PlayerController>();
-        if (player != null && !player.CanMove) return;   // 대화 중·씬 이동 중엔 안 열림
+        if (player == null || !player.CanMove) return;   // 플레이어가 없거나(타이틀) 대화 중·씬 이동 중엔 안 열림
 
         PlayerController.SetLock(this, true);
 
@@ -186,6 +187,7 @@ public class RuleBook : MonoBehaviour
     void Close()
     {
         open = false;
+        ClosedFrame = Time.frameCount;
         bookRoot.SetActive(false);
         PlayerController.SetLock(this, false);
     }
