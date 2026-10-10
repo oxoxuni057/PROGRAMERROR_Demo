@@ -38,6 +38,7 @@ public class PlayerController : MonoBehaviour
         if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) input.x -= 1;
         if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) input.x += 1;
 
+        if (input.x != 0) input.y = 0;
         moveInput = input.normalized;  // 대각선이 더 빠르지 않게
         IsRunning = IsMoving && kb.leftShiftKey.isPressed;
         if (IsMoving) FacingDirection = moveInput;
