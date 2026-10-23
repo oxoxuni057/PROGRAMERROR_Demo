@@ -13,7 +13,7 @@ public static class Map18Builder
     const string SpriteDir = "Assets/Map/Tiles/Sprites";
     const string TileDir = "Assets/Map/Tiles";
     const string SceneDir = "Assets/Scenes/Map";
-    const string PlayerPrefab = "Assets/Prefabs/Player.prefab";
+
     const int W = 50;
     const int H = 32;
     const int P = 32;
@@ -24,6 +24,7 @@ public static class Map18Builder
     {
         public string Name;
         public int X0, Y0, X1, Y1;
+        public int DX;
         public char Kind;
         public Color Color;
     }
@@ -31,21 +32,28 @@ public static class Map18Builder
     class Plan
     {
         public string Scene;
-        public char[,] G = new char[W, H];
+        public char[,] G;
         public List<Mark> Rooms = new List<Mark>();
         public List<Mark> Events = new List<Mark>();
         public List<KeyValuePair<Vector2Int, string>> Decor = new List<KeyValuePair<Vector2Int, string>>();
         public Mark Stairs;
-        public string StairsTarget;
+        public string StairsUp;
+        public string StairsDown;
         public Vector2Int Spawn;
+        public Vector2Int? Start;
         public List<Vector2Int> Patrol = new List<Vector2Int>();
 
-        public Plan(string scene)
+        public Plan(string scene) : this(scene, W, H)
+        {
+        }
+
+        public Plan(string scene, int w, int h)
         {
             Scene = scene;
-            for (int x = 0; x < W; x++)
-                for (int y = 0; y < H; y++)
-                    G[x, y] = (x == 0 || y == 0 || x == W - 1 || y == H - 1) ? '#' : 'w';
+            G = new char[w, h];
+            for (int x = 0; x < w; x++)
+                for (int y = 0; y < h; y++)
+                    G[x, y] = (x == 0 || y == 0 || x == w - 1 || y == h - 1) ? '#' : 'w';
         }
 
         public void Fill(int x0, int y0, int x1, int y1, char c)
@@ -109,12 +117,37 @@ public static class Map18Builder
         BuildFloor(Floor2());
     }
 
-    [MenuItem("PROGRAMERROR/맵/18관 1층 + 2층 모두 만들기")]
+    [MenuItem("PROGRAMERROR/맵/18관 3층 만들기")]
+    public static void Build3F()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildFloor(Floor3());
+    }
+
+    [MenuItem("PROGRAMERROR/맵/18관 4층 만들기")]
+    public static void Build4F()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildFloor(Floor4());
+    }
+
+    [MenuItem("PROGRAMERROR/맵/18관 5층 만들기")]
+    public static void Build5F()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildFloor(Floor5());
+    }
+
+    [MenuItem("PROGRAMERROR/맵/18관 전체 층 만들기")]
     public static void BuildAll()
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
-        BuildFloor(Floor2());
+        BuildTemplates();
         BuildFloor(Floor1());
+        BuildFloor(Floor2());
+        BuildFloor(Floor4());
+        BuildFloor(Floor5());
+        BuildFloor(Floor3());
     }
 
     static Plan Floor1()
@@ -144,9 +177,9 @@ public static class Map18Builder
         p.Fill(13, 16, 36, 21, 'g');
         p.Label("잔디밭 (뚫림)", 13, 16, 21, 21);
         p.Fill(22, 16, 27, 16, 'w');
-        p.Room("계단 (2층으로)", 22, 17, 27, 21, 's');
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
         p.Stairs = p.Rooms[p.Rooms.Count - 1];
-        p.StairsTarget = "18관_2층";
+        p.StairsUp = "18관_2층";
 
         p.Room("18110", 42, 12, 48, 13, 'c');
         p.Room("18111", 42, 15, 48, 17, 'c');
@@ -218,9 +251,10 @@ public static class Map18Builder
 
         p.Fill(12, 11, 37, 21, 'v');
         p.Label("중정 (뚫린 공간, 난간)", 12, 11, 21, 16);
-        p.Room("계단 (1층으로)", 22, 17, 27, 21, 's');
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
         p.Stairs = p.Rooms[p.Rooms.Count - 1];
-        p.StairsTarget = "18관_1층";
+        p.StairsUp = "18관_3층";
+        p.StairsDown = "18관_1층";
 
         p.Room("18215 랩실", 42, 12, 48, 13, 'l');
         p.Room("18216 랩실", 42, 15, 48, 15, 'l');
@@ -280,6 +314,181 @@ public static class Map18Builder
         return p;
     }
 
+    static Plan Floor3()
+    {
+        var p = new Plan("18관_3층");
+        p.Corridors();
+
+        p.Room("18309", 1, 1, 10, 6, 'c');
+        p.Room("18310", 12, 1, 24, 6, 'c');
+        p.Room("18311", 26, 1, 38, 6, 'c');
+        p.Room("18312 (잠김)", 40, 1, 45, 6, 'L');
+        p.Room("18313 (잠김)", 47, 1, 48, 6, 'L');
+        p.DoorRow('d', 7, 5, 6, 8, 9, 17, 18, 22, 23, 31, 32, 36, 37);
+        p.DoorRow('x', 7, 43, 47);
+
+        p.Room("18308", 1, 12, 7, 16, 'c');
+        p.Room("18307", 1, 18, 7, 20, 'c');
+        p.Door('d', 8, 13, 15);
+        p.Door('d', 8, 18, 20);
+
+        p.Room("18314", 42, 12, 48, 16, 'c');
+        p.Room("18315", 42, 18, 48, 20, 'c');
+        p.Door('d', 41, 13, 15);
+        p.Door('d', 41, 18, 20);
+
+        p.Fill(12, 11, 37, 21, 'v');
+        p.Label("중정 (뚫린 공간, 난간)", 12, 11, 21, 16);
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
+        p.Stairs = p.Rooms[p.Rooms.Count - 1];
+        p.StairsUp = "18관_4층";
+        p.StairsDown = "18관_2층";
+
+        p.Room("여자화장실", 1, 26, 3, 30, 'r');
+        p.Room("남자화장실", 5, 26, 6, 30, 'r');
+        p.Room("18306 (잠김)", 8, 26, 8, 30, 'L');
+        p.Room("18306-1 (잠김)", 10, 26, 10, 30, 'L');
+        p.Room("18306-2 (잠김)", 12, 26, 12, 30, 'L');
+        p.Room("18305-1 (잠김)", 14, 26, 14, 30, 'L');
+        p.Room("18305", 16, 26, 19, 30, 'c');
+        p.Room("18304 (잠김)", 21, 26, 21, 30, 'L');
+        p.Room("18303", 23, 26, 30, 30, 'c');
+        p.Room("18302 랩실", 32, 26, 35, 30, 'l');
+        p.Room("18301 랩실", 37, 26, 42, 30, 'l');
+        p.Room("남자화장실", 44, 26, 45, 30, 'r');
+        p.Room("여자화장실", 47, 26, 48, 30, 'r');
+        p.DoorRow('d', 25, 2, 3, 5, 6, 16, 17, 23, 24, 32, 33, 37, 38, 44, 45, 47, 48);
+        p.DoorRow('x', 25, 8, 10, 12, 14, 21);
+
+        p.Door('E', 0, 8, 10);
+        p.Door('E', 49, 8, 10);
+
+        p.Put("extinguisher", 38, 8);
+        p.Put("extinguisher", 38, 22);
+
+        p.Event("1 18310: 멈춘 친구, 칠판에 주인공 이름 (지우면 ROLLBACK)", 17, 2, 17, 2);
+        p.Event("2 복도: ??? 에게 끌려나와 대화, 공통 1번 받음 (플레이 시작)", 17, 9, 17, 9);
+        p.Event("3 18311 빈 강의실: 출석 부르는 소리 (튜토리얼)", 31, 2, 31, 2);
+        p.Event("4 18308: 공통 2번 쪽지", 4, 12, 4, 12);
+        p.Event("5 18314: 공통 3번 쪽지", 44, 12, 44, 12);
+        p.Event("6 중앙 계단: 층수 표시 오류 (확인하러 올라가면 ROLLBACK)", 25, 23, 25, 23);
+        p.Event("(제안) 칠판·출석 규칙 쪽지", 34, 9, 34, 9);
+
+        p.Spawn = new Vector2Int(25, 23);
+        p.Start = new Vector2Int(16, 4);
+        return p;
+    }
+
+    static Plan Floor4()
+    {
+        var p = new Plan("18관_4층");
+        p.Corridors();
+
+        p.Room("18419", 1, 1, 10, 6, 'c');
+        p.Room("18420", 12, 1, 20, 6, 'c');
+        p.Room("18420-1 (잠김)", 22, 1, 24, 6, 'L');
+        p.Room("18421", 26, 1, 34, 6, 'c');
+        p.Room("18421-1 (잠김)", 36, 1, 38, 6, 'L');
+        p.Room("18422 (잠김)", 40, 1, 45, 6, 'L');
+        p.Room("18423 (잠김)", 47, 1, 48, 6, 'L');
+        p.DoorRow('d', 7, 5, 6, 8, 9, 15, 16, 18, 19, 29, 30, 32, 33);
+        p.DoorRow('x', 7, 22, 36, 42, 47);
+
+        p.Room("18418", 1, 12, 7, 16, 'c');
+        p.Room("18417", 1, 18, 7, 20, 'c');
+        p.Door('d', 8, 13, 15);
+        p.Door('d', 8, 18, 20);
+
+        p.Room("18424", 42, 12, 48, 16, 'c');
+        p.Room("18425", 42, 18, 48, 20, 'c');
+        p.Door('d', 41, 13, 15);
+        p.Door('d', 41, 18, 20);
+
+        p.Fill(12, 11, 37, 21, 'v');
+        p.Label("중정 (뚫린 공간, 난간)", 12, 11, 21, 16);
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
+        p.Stairs = p.Rooms[p.Rooms.Count - 1];
+        p.StairsUp = "18관_5층";
+        p.StairsDown = "18관_3층";
+
+        p.Room("여자화장실", 1, 26, 3, 30, 'r');
+        p.Room("남자화장실", 5, 26, 6, 30, 'r');
+        SmallRooms(p, 4, new[]
+        {
+            new[] { 16, 8, 9 }, new[] { 15, 11, 11 }, new[] { 14, 13, 13 }, new[] { 13, 15, 15 },
+            new[] { 12, 17, 17 }, new[] { 11, 19, 19 }, new[] { 10, 21, 22 }, new[] { 9, 24, 25 },
+            new[] { 8, 27, 27 }, new[] { 7, 29, 29 }, new[] { 6, 31, 31 }, new[] { 5, 33, 33 },
+            new[] { 4, 35, 35 }, new[] { 3, 37, 37 }, new[] { 2, 39, 39 }, new[] { 1, 41, 42 }
+        }, new[] { 2, 3, 5, 6, 44, 45, 47, 48 }, new[] { 8, 11, 13, 15, 17, 19, 21, 24, 27, 29, 31, 33, 35, 37, 39, 41 });
+        p.Room("남자화장실", 44, 26, 45, 30, 'r');
+        p.Room("여자화장실", 47, 26, 48, 30, 'r');
+
+        p.Door('E', 0, 8, 10);
+        p.Door('E', 49, 8, 10);
+
+        p.Put("extinguisher", 11, 8);
+        p.Put("extinguisher", 11, 22);
+        p.Put("extinguisher", 38, 22);
+
+        p.Event("1 계단 무한 반복 구간: 내려가도 다시 4층 → 복도 끝까지 걷기", 25, 23, 25, 23);
+        p.Event("2 경사로 위 쪽길 통로 (산으로 연결, 1챕터에서는 막힘)", 48, 9, 48, 9);
+
+        p.Spawn = new Vector2Int(25, 23);
+        return p;
+    }
+
+    static Plan Floor5()
+    {
+        var p = new Plan("18관_5층");
+        p.Corridors();
+
+        p.Room("18518", 1, 1, 10, 6, 'c');
+        p.Room("18519", 12, 1, 24, 6, 'c');
+        p.Room("18520", 26, 1, 38, 6, 'c');
+        p.Room("18521 (잠김)", 40, 1, 45, 6, 'L');
+        p.Room("18522 (잠김)", 47, 1, 48, 6, 'L');
+        p.DoorRow('d', 7, 5, 6, 8, 9, 17, 18, 22, 23, 31, 32, 36, 37);
+        p.DoorRow('x', 7, 43, 47);
+
+        p.Room("18517", 1, 12, 7, 20, 'c');
+        p.Door('d', 8, 12, 14);
+        p.Door('d', 8, 18, 20);
+
+        p.Room("18523", 42, 12, 48, 20, 'c');
+        p.Door('d', 41, 12, 14);
+        p.Door('d', 41, 18, 20);
+
+        p.Fill(12, 11, 37, 21, 'v');
+        p.Label("중정 (뚫린 공간, 난간)", 12, 11, 21, 16);
+        p.Room("중앙 계단", 22, 17, 27, 21, 's');
+        p.Stairs = p.Rooms[p.Rooms.Count - 1];
+        p.StairsDown = "18관_4층";
+
+        p.Room("여자화장실", 1, 26, 3, 30, 'r');
+        p.Room("남자화장실", 5, 26, 6, 30, 'r');
+        SmallRooms(p, 5, new[]
+        {
+            new[] { 16, 8, 9 }, new[] { 15, 11, 11 }, new[] { 14, 13, 13 }, new[] { 13, 15, 15 },
+            new[] { 12, 17, 17 }, new[] { 11, 19, 19 }, new[] { 10, 21, 22 }, new[] { 9, 24, 25 },
+            new[] { 8, 27, 27 }, new[] { 7, 29, 29 }, new[] { 6, 31, 31 }, new[] { 5, 33, 33 },
+            new[] { 4, 35, 35 }, new[] { 3, 37, 37 }, new[] { 2, 39, 39 }, new[] { 1, 41, 42 }
+        }, new[] { 2, 3, 5, 6, 44, 45, 47, 48 }, new[] { 8, 11, 13, 15, 17, 19, 21, 24, 27, 29, 31, 33, 35, 37, 39, 41 });
+        p.Room("남자화장실", 44, 26, 45, 30, 'r');
+        p.Room("여자화장실", 47, 26, 48, 30, 'r');
+
+        p.Door('E', 0, 8, 10);
+        p.Door('E', 49, 8, 10);
+
+        p.Put("extinguisher", 38, 8);
+        p.Put("extinguisher", 38, 22);
+
+        p.Label("5층: 1챕터에서는 잠긴 층 (이후 챕터용)", 12, 17, 21, 21);
+        p.Event("1 계단 층수 표시판이 5층으로 바뀌는 연출 (실제로 오는 층은 아님)", 25, 23, 25, 23);
+
+        p.Spawn = new Vector2Int(25, 23);
+        return p;
+    }
+
     static Vector3Int Cell(int x, int y)
     {
         return new Vector3Int(x, -y - 1, 0);
@@ -295,10 +504,63 @@ public static class Map18Builder
         return new Vector3(c.x + 0.5f, -c.y - 0.5f, 0f);
     }
 
-    static void BuildFloor(Plan p)
+    class RoomSpec
+    {
+        public string Key;
+        public string Type;
+        public string Name;
+    }
+
+    const string RoomDir = "Assets/Scenes/Map/Rooms";
+
+    static readonly RoomSpec[] Instances =
+    {
+        new RoomSpec { Key = "18관_3층/18310@12", Type = "교실", Name = "18310" },
+        new RoomSpec { Key = "18관_3층/18311@26", Type = "교실", Name = "18311" },
+        new RoomSpec { Key = "18관_3층/18308@1", Type = "교실", Name = "18308" },
+        new RoomSpec { Key = "18관_3층/18314@42", Type = "교실", Name = "18314" },
+        new RoomSpec { Key = "18관_2층/18204-1@20", Type = "교실", Name = "18204-1" },
+        new RoomSpec { Key = "18관_2층/18209@1", Type = "교실", Name = "18209" },
+        new RoomSpec { Key = "18관_2층/18212@26", Type = "교실", Name = "18212" },
+        new RoomSpec { Key = "18관_2층/여자화장실@47", Type = "화장실", Name = "여자화장실_오른쪽" },
+        new RoomSpec { Key = "18관_1층/학생식당@13", Type = "식당", Name = "학생식당" }
+    };
+
+    static bool Walk(char c)
+    {
+        return c == '.' || c == 'o' || c == 's';
+    }
+
+    static bool IsDoor(char c)
+    {
+        return c == 'd' || c == 'x';
+    }
+
+    static string Key(Plan p, Mark r)
+    {
+        return p.Scene + "/" + r.Name + "@" + r.DX;
+    }
+
+    static RoomSpec FindSpec(string key)
+    {
+        foreach (var s in Instances) if (s.Key == key) return s;
+        return null;
+    }
+
+    static Mark RoomAt(Plan p, int x, int y)
+    {
+        foreach (var r in p.Rooms)
+            if (r.Kind != '-' && x >= r.X0 && x <= r.X1 && y >= r.Y0 && y <= r.Y1) return r;
+        return null;
+    }
+
+    static void BuildFloor(Plan d)
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var t = PrepareTiles();
+        var p = Scale(d);
+        int w = p.G.GetLength(0);
+        int h = p.G.GetLength(1);
 
         var grid = new GameObject("Grid").AddComponent<Grid>();
         var floor = MakeMap(grid, "Floor", -20, true);
@@ -306,123 +568,270 @@ public static class Map18Builder
         var walls = MakeMap(grid, "Walls", -5, true);
         var col = MakeMap(grid, "Collision", 0, false);
 
-        for (int x = 0; x < W; x++)
+        var wt = new string[w, h];
+        for (int x = 0; x < w; x++)
         {
-            for (int y = 0; y < H; y++)
+            for (int y = 0; y < h; y++)
             {
                 char c = p.G[x, y];
-                var pos = Cell(x, y);
-                floor.SetTile(pos, t[FloorName(c)]);
-                string wall = WallName(c);
-                if (wall != null) walls.SetTile(pos, t[wall]);
-                if (Solid.Contains(c)) col.SetTile(pos, t["collision"]);
+                if (Walk(c)) floor.SetTile(Cell(x, y), t[FloorName(c)]);
+                else
+                {
+                    floor.SetTile(Cell(x, y), t[c == 'g' ? "grass" : "void"]);
+                    col.SetTile(Cell(x, y), t["collision"]);
+                }
             }
         }
 
-        foreach (var r in p.Rooms) AutoDecor(p, r);
-        foreach (var d in p.Decor) decor.SetTile(Cell(d.Key.x, d.Key.y), t[d.Value]);
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 1; y < h; y++)
+            {
+                if (!Walk(p.G[x, y])) continue;
+                char a = p.G[x, y - 1];
+                if (Walk(a) || a == 'v' || a == 'g') continue;
+                bool door = IsDoor(a);
+                wt[x, y - 1] = door ? "door_lower" : "face_lower";
+                if (y >= 2 && !Walk(p.G[x, y - 2])) wt[x, y - 2] = door ? "door_upper" : "face_upper";
+                if (y >= 3 && !Walk(p.G[x, y - 3]) && wt[x, y - 3] == null) wt[x, y - 3] = "wall_edge";
+            }
+        }
+
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                char c = p.G[x, y];
+                if (Walk(c) || wt[x, y] != null) continue;
+                bool near4 = false;
+                bool near8 = false;
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    for (int dy = -1; dy <= 1; dy++)
+                    {
+                        int nx = x + dx;
+                        int ny = y + dy;
+                        if ((dx == 0 && dy == 0) || nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                        if (!Walk(p.G[nx, ny])) continue;
+                        near8 = true;
+                        if (dx == 0 || dy == 0) near4 = true;
+                    }
+                }
+                if (c == 'v' || c == 'g')
+                {
+                    if (near4) wt[x, y] = "railing";
+                    continue;
+                }
+                if (!near8) continue;
+                if (c == 'E') wt[x, y] = "exit";
+                else if (c == 'M') wt[x, y] = "main_door";
+                else if (IsDoor(c) && near4) wt[x, y] = "door";
+                else wt[x, y] = "wall_edge";
+            }
+        }
+
+        for (int x = 0; x < w; x++)
+            for (int y = 0; y < h; y++)
+                if (wt[x, y] != null) walls.SetTile(Cell(x, y), t[wt[x, y]]);
+
+        foreach (var dc in p.Decor)
+            if (Walk(p.G[dc.Key.x, dc.Key.y])) decor.SetTile(Cell(dc.Key.x, dc.Key.y), t[dc.Value]);
 
         col.gameObject.AddComponent<TilemapCollider2D>();
-
-        var rooms = new GameObject("Rooms (방 이름표)").transform;
-        foreach (var r in p.Rooms)
-        {
-            var go = new GameObject(r.Name);
-            go.transform.SetParent(rooms, false);
-            go.transform.position = Center(r);
-            var mk = go.AddComponent<MapMarker>();
-            mk.label = r.Name;
-            mk.color = r.Color;
-            mk.size = new Vector2(r.X1 - r.X0 + 1, r.Y1 - r.Y0 + 1);
-        }
-
-        var events = new GameObject("Events (이벤트 위치)").transform;
-        foreach (var e in p.Events)
-        {
-            var go = new GameObject("EV " + e.Name);
-            go.transform.SetParent(events, false);
-            go.transform.position = Center(e);
-            var size = new Vector2(e.X1 - e.X0 + 1, e.Y1 - e.Y0 + 1);
-            var box = go.AddComponent<BoxCollider2D>();
-            box.isTrigger = true;
-            box.size = size;
-            go.AddComponent<EventZone>();
-            var mk = go.AddComponent<MapMarker>();
-            mk.label = e.Name;
-            mk.color = e.Color;
-            mk.size = size;
-        }
-
-        if (p.Patrol.Count > 0)
-        {
-            var path = new GameObject("PatrolPath 그녀 순찰 경로").transform;
-            for (int i = 0; i < p.Patrol.Count; i++)
-            {
-                var wp = new GameObject("Waypoint " + (i + 1));
-                wp.transform.SetParent(path, false);
-                wp.transform.position = Center(p.Patrol[i]);
-                var mk = wp.AddComponent<MapMarker>();
-                mk.label = "순찰 " + (i + 1);
-                mk.color = new Color(0.9f, 0.1f, 0.15f);
-                mk.size = new Vector2(0.6f, 0.6f);
-            }
-        }
-
-        var stairs = new GameObject("Stairs → " + p.StairsTarget);
-        stairs.transform.position = Center(p.Stairs) + new Vector3(0f, 1.5f, 0f);
-        var sbox = stairs.AddComponent<BoxCollider2D>();
-        sbox.isTrigger = true;
-        sbox.size = new Vector2(6f, 2f);
-        var door = stairs.AddComponent<SceneDoor>();
-        var so = new SerializedObject(door);
-        so.FindProperty("targetScene").stringValue = p.StairsTarget;
-        so.FindProperty("targetSpawnId").stringValue = "stairs";
-        so.ApplyModifiedPropertiesWithoutUndo();
-
-        var spawnPos = Center(p.Spawn);
-        MakeSpawn("Spawn stairs", "stairs", spawnPos);
-        MakeSpawn("Spawn default", "default", spawnPos);
-
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
-        if (prefab != null)
-        {
-            var player = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            player.transform.position = spawnPos;
-        }
-
-        var camGo = new GameObject("Main Camera");
-        camGo.tag = "MainCamera";
-        camGo.transform.position = new Vector3(spawnPos.x, spawnPos.y, -10f);
-        var cam = camGo.AddComponent<Camera>();
-        cam.orthographic = true;
-        cam.orthographicSize = 5.625f;
-        cam.clearFlags = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color32(14, 13, 8, 255);
-        var ppc = camGo.AddComponent<PixelPerfectCamera>();
-        ppc.assetsPPU = P;
-        ppc.refResolutionX = 640;
-        ppc.refResolutionY = 360;
-        camGo.AddComponent<CameraFollow>();
-
-        var light = new GameObject("Global Light 2D").AddComponent<Light2D>();
-        light.lightType = Light2D.LightType.Global;
-        light.intensity = 1f;
 
         Directory.CreateDirectory(SceneDir);
         string scenePath = SceneDir + "/" + p.Scene + ".unity";
         EditorSceneManager.SaveScene(scene, scenePath);
         AddToBuild(scenePath);
         Debug.Log("[맵] " + scenePath + " 생성 완료");
+
+        foreach (var spec in Instances)
+            if (spec.Key.StartsWith(p.Scene + "/"))
+                BuildRoom(spec.Type, p.Scene + "_" + spec.Name, true);
     }
 
-    static void MakeSpawn(string name, string id, Vector3 pos)
+    [MenuItem("PROGRAMERROR/맵/기본 방 템플릿 만들기 (교실·식당·화장실)")]
+    public static void BuildTemplatesMenu()
     {
-        var go = new GameObject(name);
-        go.transform.position = pos;
-        var sp = go.AddComponent<SpawnPoint>();
-        var so = new SerializedObject(sp);
-        so.FindProperty("id").stringValue = id;
-        so.ApplyModifiedPropertiesWithoutUndo();
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildTemplates();
+    }
+
+    static void BuildTemplates()
+    {
+        BuildRoom("교실", "_템플릿_교실", false);
+        BuildRoom("식당", "_템플릿_식당", false);
+        BuildRoom("화장실", "_템플릿_화장실", false);
+    }
+
+    static void BuildRoom(string type, string sceneName, bool addToBuild)
+    {
+        var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+        var t = PrepareTiles();
+
+        int iw = type == "식당" ? 20 : type == "화장실" ? 12 : 14;
+        int ih = type == "화장실" ? 10 : 12;
+        int w = iw + 2;
+        int h = ih + 4;
+        string floorTile = type == "식당" ? "floor_cafeteria" : type == "화장실" ? "floor_toilet" : "floor_classroom";
+        int doorX = iw / 2;
+
+        var grid = new GameObject("Grid").AddComponent<Grid>();
+        var floor = MakeMap(grid, "Floor", -20, true);
+        var decor = MakeMap(grid, "Decor", -10, true);
+        var walls = MakeMap(grid, "Walls", -5, true);
+        var wallDecor = MakeMap(grid, "WallDecor", -4, true);
+        var col = MakeMap(grid, "Collision", 0, false);
+
+        for (int x = 0; x < w; x++)
+        {
+            for (int y = 0; y < h; y++)
+            {
+                bool inside = x >= 1 && x <= iw && y >= 3 && y <= ih + 2;
+                floor.SetTile(Cell(x, y), t[inside ? floorTile : "void"]);
+                if (inside) continue;
+                col.SetTile(Cell(x, y), t["collision"]);
+                string wall = "wall_edge";
+                if (x >= 1 && x <= iw && y == 1) wall = "face_upper";
+                if (x >= 1 && x <= iw && y == 2) wall = "face_lower";
+                if (y == h - 1 && (x == doorX || x == doorX + 1)) wall = "door";
+                walls.SetTile(Cell(x, y), t[wall]);
+            }
+        }
+
+        if (type == "교실")
+        {
+            for (int x = iw / 2 - 3; x <= iw / 2 + 2; x++)
+            {
+                wallDecor.SetTile(Cell(x, 1), t["board_upper"]);
+                wallDecor.SetTile(Cell(x, 2), t["board_lower"]);
+            }
+            decor.SetTile(Cell(iw / 2, 4), t["table"]);
+            decor.SetTile(Cell(iw / 2 + 1, 4), t["table"]);
+            for (int y = 6; y <= ih; y += 2)
+                for (int x = 2; x + 1 <= iw - 1; x += 3)
+                {
+                    decor.SetTile(Cell(x, y), t["desk"]);
+                    decor.SetTile(Cell(x + 1, y), t["desk"]);
+                }
+        }
+        else if (type == "식당")
+        {
+            for (int x = 2; x <= iw - 1; x++) decor.SetTile(Cell(x, 4), t["bench"]);
+            for (int y = 7; y <= ih; y += 3)
+                for (int x = 3; x + 2 <= iw - 1; x += 6)
+                    for (int k = 0; k < 3; k++) decor.SetTile(Cell(x + k, y), t["table"]);
+        }
+        else
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                int x0 = 2 + i * 3;
+                for (int k = 0; k < 2; k++)
+                {
+                    decor.SetTile(Cell(x0 + k, 3), t["stall"]);
+                    decor.SetTile(Cell(x0 + k, 4), t["stall"]);
+                }
+            }
+            for (int x = 2; x <= iw - 1; x++) decor.SetTile(Cell(x, ih - 1), t["bench"]);
+            for (int x = iw - 4; x <= iw - 1; x++) wallDecor.SetTile(Cell(x, 2), t["mirror"]);
+        }
+
+        col.gameObject.AddComponent<TilemapCollider2D>();
+
+        Directory.CreateDirectory(RoomDir);
+        string path = RoomDir + "/" + sceneName + ".unity";
+        EditorSceneManager.SaveScene(scene, path);
+        if (addToBuild) AddToBuild(path);
+        Debug.Log("[맵] " + path + " 생성 완료");
+    }
+
+    static readonly HashSet<char> Thin = new HashSet<char> { 'w', '#', 'd', 'x', 'E', 'M' };
+    static readonly HashSet<string> Spread = new HashSet<string> { "table", "shelf", "bench" };
+
+    static int S(int i)
+    {
+        return (3 * i + 1) / 2;
+    }
+
+    static char At(Plan d, int i, int j)
+    {
+        if (i < 0 || j < 0 || i >= W || j >= H) return '#';
+        return d.G[i, j];
+    }
+
+    static char Pick(char c, char before, char after, bool second)
+    {
+        char n = second ? after : before;
+        char o = second ? before : after;
+        if (Thin.Contains(n)) return c;
+        if (second || Thin.Contains(o)) return n;
+        return c;
+    }
+
+    static Mark ScaleMark(Mark m)
+    {
+        return new Mark { Name = m.Name, X0 = S(m.X0), Y0 = S(m.Y0), X1 = S(m.X1 + 1) - 1, Y1 = S(m.Y1 + 1) - 1, Kind = m.Kind, Color = m.Color, DX = m.X0 };
+    }
+
+    static Vector2Int ScalePoint(Vector2Int v)
+    {
+        return new Vector2Int(S(v.x), S(v.y));
+    }
+
+    static Plan Scale(Plan d)
+    {
+        var q = new Plan(d.Scene, S(W), S(H));
+        for (int fx = 0; fx < S(W); fx++)
+        {
+            for (int fy = 0; fy < S(H); fy++)
+            {
+                int i = 2 * fx / 3;
+                int j = 2 * fy / 3;
+                char c = d.G[i, j];
+                if (Thin.Contains(c) && S(i + 1) - S(i) == 2)
+                    c = Pick(c, At(d, i - 1, j), At(d, i + 1, j), fx == S(i) + 1);
+                if (Thin.Contains(c) && S(j + 1) - S(j) == 2)
+                    c = Pick(c, At(d, i, j - 1), At(d, i, j + 1), fy == S(j) + 1);
+                q.G[fx, fy] = c;
+            }
+        }
+        foreach (var r in d.Rooms)
+        {
+            var m = ScaleMark(r);
+            q.Rooms.Add(m);
+            if (r == d.Stairs) q.Stairs = m;
+        }
+        foreach (var e in d.Events) q.Events.Add(ScaleMark(e));
+        foreach (var dc in d.Decor)
+        {
+            int x0 = S(dc.Key.x);
+            int y0 = S(dc.Key.y);
+            if (!Spread.Contains(dc.Value))
+            {
+                q.Put(dc.Value, x0, y0);
+                continue;
+            }
+            for (int x = x0; x < S(dc.Key.x + 1); x++)
+                for (int y = y0; y < S(dc.Key.y + 1); y++)
+                    if (y == y0) q.Put(dc.Value, x, y);
+        }
+        foreach (var w in d.Patrol) q.Patrol.Add(ScalePoint(w));
+        q.StairsUp = d.StairsUp;
+        q.StairsDown = d.StairsDown;
+        q.Spawn = ScalePoint(d.Spawn);
+        if (d.Start.HasValue) q.Start = ScalePoint(d.Start.Value);
+        return q;
+    }
+
+    static void SmallRooms(Plan p, int floor, int[][] rooms, int[] doors, int[] locked)
+    {
+        foreach (var r in rooms)
+        {
+            p.Room((18000 + floor * 100 + r[0]) + " (잠김)", r[1], 26, r[2], 30, 'L');
+        }
+        p.DoorRow('x', 25, locked);
+        p.DoorRow('d', 25, doors);
     }
 
     static void AutoDecor(Plan p, Mark r)
@@ -745,6 +1154,61 @@ public static class Map18Builder
         {
             p.Rect(4, 14, 27, 29, Hex("#BDB69C"));
             p.Rect(6, 16, 25, 27, Hex("#D8DCD0"));
+        }, false);
+
+        t["face_upper"] = MakeTile("face_upper", p =>
+        {
+            p.Fill(floorC);
+            p.Rect(0, 28, 31, 31, Hex("#8F8875"));
+            p.Rect(0, 26, 31, 26, Hex("#9C957F"));
+        }, false);
+
+        t["face_lower"] = MakeTile("face_lower", p =>
+        {
+            p.Fill(floorC);
+            p.Rect(0, 0, 31, 4, Hex("#6E6E60"));
+            p.Rect(0, 5, 31, 5, Hex("#85857A"));
+        }, false);
+
+        t["wall_edge"] = MakeTile("wall_edge", p =>
+        {
+            p.Fill(shadow);
+            p.Frame(0, 0, 31, 31, 2, wall);
+        }, false);
+
+        t["railing"] = MakeTile("railing", p =>
+        {
+            p.Rect(0, 18, 31, 20, Hex("#8A8A7A"));
+            for (int x = 2; x < P; x += 8) p.Rect(x, 6, x + 1, 18, Hex("#8A8A7A"));
+        }, false);
+
+        t["door_upper"] = MakeTile("door_upper", p =>
+        {
+            p.Fill(wood);
+            p.Rect(0, 0, 2, 31, wall);
+            p.Rect(29, 0, 31, 31, wall);
+            p.Rect(0, 29, 31, 31, wall);
+            p.Rect(10, 10, 21, 22, light);
+        }, false);
+
+        t["door_lower"] = MakeTile("door_lower", p =>
+        {
+            p.Fill(wood);
+            p.Rect(0, 0, 2, 31, wall);
+            p.Rect(29, 0, 31, 31, wall);
+            p.Rect(23, 14, 25, 17, light);
+        }, false);
+
+        t["board_upper"] = MakeTile("board_upper", p =>
+        {
+            p.Rect(0, 0, 31, 27, Hex("#3F4A3C"));
+            p.Rect(0, 24, 31, 27, wood);
+        }, false);
+
+        t["board_lower"] = MakeTile("board_lower", p =>
+        {
+            p.Rect(0, 8, 31, 31, Hex("#3F4A3C"));
+            p.Rect(0, 4, 31, 8, wood);
         }, false);
 
         t["collision"] = MakeTile("collision", p =>
