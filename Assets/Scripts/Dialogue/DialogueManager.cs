@@ -23,6 +23,10 @@ public class DialogueChoice
 
     [Tooltip("그 밖에 실행할 동작 (나중에 ROLLBACK 연결)")]
     public UnityEvent onChosen;
+
+    // 대사 표(CSV)에서 쓰는 것 (Inspector에는 안 보임)
+    [NonSerialized] public Func<bool> visibleIf;   // 여러 조건·"!플래그" 같은 조건
+    [NonSerialized] public Action picked;          // 고른 뒤 실행 (대화가 닫힌 다음)
 }
 
 // 대사 한 줄
@@ -32,15 +36,35 @@ public class DialogueLine
     public string speaker;
     [TextArea(2, 4)] public string text;
 
+    [Tooltip("Normal: 보통 대사 / Thought: 속마음 (괄호 + 기울임 + 흐린 색)")]
+    public LineStyle style = LineStyle.Normal;
+
+    [Tooltip("체크하면 이 대사가 끝까지 나온 뒤 키를 안 눌러도 바로 다음 줄로 넘어감 (말이 끊기는 연출: \"그게 무슨—\")")]
+    public bool interrupted;
+
+    [Tooltip("이 줄을 보여주기 전에 기다릴 시간(초). 글리치 같은 연출이 끝나길 기다릴 때")]
+    public float waitBefore;
+
+    [Tooltip("이 줄이 시작될 때 실행할 동작 (예: GlitchTrigger.Play)")]
+    public UnityEvent onLineStart;
+
     [Tooltip("이 대사가 끝나면 보여줄 선택지 (없으면 비워두기)")]
     public DialogueChoice[] choices;
+
+    [NonSerialized] public Action afterLine;   // 대사 표(CSV): 이 줄을 넘길 때 실행
 }
+
+public enum LineStyle { Normal, Thought }
 
 public class DialogueManager : MonoBehaviour
 {
     public static DialogueManager Instance { get; private set; }
 
     [SerializeField] float charsPerSecond = 30f;
+    [SerializeField] float interruptDelay = 0.35f;   // 끊기는 대사가 끝나고 다음 줄로 넘어가기까지
+
+    static readonly Color NormalColor = Color.white;
+    static readonly Color ThoughtColor = new Color(0.7f, 0.75f, 0.85f);
 
     public bool IsOpen { get; private set; }
 
@@ -130,17 +154,31 @@ public class DialogueManager : MonoBehaviour
         nameText.text = line.speaker;
         nameText.gameObject.SetActive(!string.IsNullOrEmpty(line.speaker));
 
+        bool thought = line.style == LineStyle.Thought;
+        bodyText.fontStyle = thought ? FontStyle.Italic : FontStyle.Normal;
+        bodyText.color = thought ? ThoughtColor : NormalColor;
+
         if (typeRoutine != null) StopCoroutine(typeRoutine);
-        typeRoutine = StartCoroutine(TypeText(line.text));
+        typeRoutine = StartCoroutine(PlayLine(line));
     }
 
-    IEnumerator TypeText(string text)
+    // 화면에 보일 글자 (속마음은 괄호로 감쌈)
+    static string DisplayText(DialogueLine line)
+    {
+        string t = line.text ?? "";
+        return line.style == LineStyle.Thought ? "(" + t + ")" : t;
+    }
+
+    IEnumerator PlayLine(DialogueLine line)
     {
         typing = true;
         nextHint.enabled = false;
         bodyText.text = "";
 
-        foreach (char c in text)
+        line.onLineStart?.Invoke();                       // 줄 시작 연출 (글리치 등)
+        if (line.waitBefore > 0f) yield return new WaitForSeconds(line.waitBefore);
+
+        foreach (char c in DisplayText(line))
         {
             bodyText.text += c;
             yield return new WaitForSeconds(1f / charsPerSecond);
@@ -152,7 +190,7 @@ public class DialogueManager : MonoBehaviour
     void CompleteLine()
     {
         if (typeRoutine != null) StopCoroutine(typeRoutine);
-        bodyText.text = lines[index].text;
+        bodyText.text = DisplayText(lines[index]);
         OnLineFinished();
     }
 
@@ -160,11 +198,23 @@ public class DialogueManager : MonoBehaviour
     void OnLineFinished()
     {
         typing = false;
+        if (lines[index].interrupted)
+        {
+            StartCoroutine(AutoNext(index));   // 끊기는 대사: 키 없이 다음 줄로
+            return;
+        }
         if (!TryShowChoices()) nextHint.enabled = true;
+    }
+
+    IEnumerator AutoNext(int lineIndex)
+    {
+        yield return new WaitForSeconds(interruptDelay);
+        if (IsOpen && index == lineIndex && !typing && !choosing) NextLine();
     }
 
     void NextLine()
     {
+        lines[index].afterLine?.Invoke();
         index++;
         if (index >= lines.Length) EndDialogue();
         else ShowLine();
@@ -180,7 +230,8 @@ public class DialogueManager : MonoBehaviour
         foreach (var c in choices)
         {
             // 조건 플래그가 없거나, 플래그가 켜져 있을 때만 보여줌
-            if (string.IsNullOrEmpty(c.requiredFlag) || GameFlags.Has(c.requiredFlag))
+            if ((string.IsNullOrEmpty(c.requiredFlag) || GameFlags.Has(c.requiredFlag))
+                && (c.visibleIf == null || c.visibleIf()))
                 visibleChoices.Add(c);
             if (visibleChoices.Count == choiceTexts.Length) break;
         }
@@ -227,6 +278,7 @@ public class DialogueManager : MonoBehaviour
 
         GameFlags.Set(choice.setFlag);       // 플래그 켜고
         choice.onChosen?.Invoke();           // 연결된 동작 실행하고
+        choice.picked?.Invoke();             // 대사 표(CSV)의 실행
         if (choice.next != null)             // 이어지는 대화가 있으면 시작
             choice.next.Play();
     }
@@ -251,8 +303,7 @@ public class DialogueManager : MonoBehaviour
 
     void SetPlayerControl(bool on)
     {
-        var p = FindAnyObjectByType<PlayerController>();
-        if (p != null) p.CanMove = on;
+        PlayerController.SetLock(this, !on);
     }
 
     // ───────── UI 만들기 ─────────
