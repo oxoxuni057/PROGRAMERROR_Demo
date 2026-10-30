@@ -196,12 +196,10 @@ public class GlitchEffect : MonoBehaviour
             bars[i].enabled = false;
         }
 
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-
-        centerText = NewText("CenterText", font, 64, TextAnchor.MiddleCenter);
+        centerText = NewText("CenterText", GameFont.Bold, 64, TextAnchor.MiddleCenter);
         Stretch(centerText.rectTransform);
 
-        cornerText = NewText("CornerText", font, 28, TextAnchor.UpperRight);
+        cornerText = NewText("CornerText", GameFont.Regular, 28, TextAnchor.UpperRight);
         cornerText.color = new Color(1f, 0.2f, 0.25f);
         var rt = cornerText.rectTransform;
         rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(1f, 1f);
