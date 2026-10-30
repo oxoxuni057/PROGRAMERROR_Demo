@@ -80,8 +80,11 @@ public class FilterTestKeys : MonoBehaviour
         }
         if (stay == null)
         {
+            // StayIntensify는 콜라이더가 먼저 있어야 붙음
+            var col = GetComponent<Collider2D>();
+            if (col == null) col = gameObject.AddComponent<BoxCollider2D>();
+            col.isTrigger = true;   // 테스트 오브젝트가 길을 막지 않게
             stay = gameObject.AddComponent<StayIntensify>();
-            GetComponent<Collider2D>().isTrigger = true;   // 테스트 오브젝트가 길을 막지 않게
         }
         stay.SetInside(kb.digit9Key.isPressed);
         if (kb.digit9Key.wasPressedThisFrame) status = "9 머무는 중... (떼면 돌아옴)";
