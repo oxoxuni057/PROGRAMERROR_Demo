@@ -12,6 +12,7 @@ public class ScreenFilter : MonoBehaviour
     public static ScreenFilter Instance { get; private set; }
 
     public const string InspectionFlag = "점검세계";   // 이 플래그가 켜져 있으면 점검 세계
+    static readonly int AnalogTVId = Shader.PropertyToID("_AnalogTV");
 
     public enum Look { Normal, Inspection, Floor2 }
 
@@ -25,19 +26,20 @@ public class ScreenFilter : MonoBehaviour
         public float vignette;    // 가장자리 어둡게 (0~1)
         public float grain;       // 필름 노이즈 (0~1)
         public float rgbSplit;    // 가장자리 RGB 어긋남 (0~1)
+        public float analogTV;    // 아날로그 TV 셰이더 세기 (0~1, Assets/Effects/AnalogTV)
     }
 
     static readonly Preset NormalPreset = new Preset
     {
-        filter = Color.white, saturation = 0f, contrast = 0f, exposure = 0f, vignette = 0.15f, grain = 0f, rgbSplit = 0f,
+        filter = Color.white, saturation = 0f, contrast = 0f, exposure = 0f, vignette = 0.15f, grain = 0f, rgbSplit = 0f, analogTV = 0f,
     };
     static readonly Preset InspectionPreset = new Preset   // 점검: 차갑고 어두운 청회색 + 노이즈 + RGB 어긋남
     {
-        filter = new Color(0.70f, 0.86f, 0.92f), saturation = -55f, contrast = 20f, exposure = -1.0f, vignette = 0.6f, grain = 0.9f, rgbSplit = 0.6f,
+        filter = new Color(0.70f, 0.86f, 0.92f), saturation = -55f, contrast = 20f, exposure = -1.0f, vignette = 0.6f, grain = 0.9f, rgbSplit = 0.6f, analogTV = 0.5f,
     };
     static readonly Preset Floor2Preset = new Preset       // 2층: 점검보다 더 차갑고 어둡게, RGB 더 많이
     {
-        filter = new Color(0.58f, 0.76f, 0.86f), saturation = -65f, contrast = 25f, exposure = -1.5f, vignette = 0.7f, grain = 1f, rgbSplit = 1f,
+        filter = new Color(0.58f, 0.76f, 0.86f), saturation = -65f, contrast = 25f, exposure = -1.5f, vignette = 0.7f, grain = 1f, rgbSplit = 1f, analogTV = 1f,
     };
 
     ColorAdjustments color;
@@ -72,6 +74,7 @@ public class ScreenFilter : MonoBehaviour
     {
         if (Instance != this) return;
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        Shader.SetGlobalFloat(AnalogTVId, 0f);   // 플레이 끝나면 에디터 화면은 원래대로
         Rollback.OnRollback -= Refresh;
     }
 
@@ -147,6 +150,7 @@ public class ScreenFilter : MonoBehaviour
             vignette = Mathf.Lerp(a.vignette, b.vignette, t),
             grain = Mathf.Lerp(a.grain, b.grain, t),
             rgbSplit = Mathf.Lerp(a.rgbSplit, b.rgbSplit, t),
+            analogTV = Mathf.Lerp(a.analogTV, b.analogTV, t),
         };
     }
 
@@ -162,6 +166,7 @@ public class ScreenFilter : MonoBehaviour
         grain.active = p.grain > 0f;
         rgb.intensity.Override(p.rgbSplit);
         rgb.active = p.rgbSplit > 0f;
+        Shader.SetGlobalFloat(AnalogTVId, p.analogTV);
     }
 
     // 카메라가 바뀌면 그 카메라의 화면 효과(Post Processing)를 켜 줌 (씬마다 체크 안 해도 되게)
