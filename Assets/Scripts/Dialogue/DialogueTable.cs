@@ -241,7 +241,7 @@ public static class DialogueTable
     }
 
     // 따옴표·쉼표·줄바꿈이 들어간 칸도 읽는 CSV 해석
-    static List<List<string>> ParseCsv(string text)
+    internal static List<List<string>> ParseCsv(string text)
     {
         var rows = new List<List<string>>();
         var row = new List<string>();

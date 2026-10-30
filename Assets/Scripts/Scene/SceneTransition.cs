@@ -58,6 +58,7 @@ public class SceneTransition : MonoBehaviour
     // ④ 새 씬이 열리면 플레이어를 지정한 SpawnPoint 위치로 옮김
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        SceneLinks.Build(scene);   // 문 연결 표의 문·도착 위치, 플레이어·카메라 만들기
         if (string.IsNullOrEmpty(nextSpawnId)) return;
 
         var player = FindAnyObjectByType<PlayerController>();
