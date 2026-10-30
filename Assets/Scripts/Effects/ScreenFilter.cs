@@ -42,6 +42,11 @@ public class ScreenFilter : MonoBehaviour
         filter = new Color(0.58f, 0.76f, 0.86f), saturation = -65f, contrast = 25f, exposure = -0.8f, vignette = 0.55f, grain = 1f, rgbSplit = 1f, analogTV = 1f,
     };
 
+    // 순간 효과(TV 튐, 쿵쿵, 머물수록 심해짐 등)가 이번 프레임에 더하는 양. 매 프레임 다시 채워짐
+    struct Boost { public float tv, rgb, grain, vignette, redEdge; }
+    static Boost boost;
+    static readonly Color RedEdgeColor = new Color(0.55f, 0f, 0.04f);
+
     ColorAdjustments color;
     Vignette vignette;
     FilmGrain grain;
@@ -90,6 +95,16 @@ public class ScreenFilter : MonoBehaviour
     {
         if (Instance == null) return;
         Instance.FadeTo(look, seconds);
+    }
+
+    // ⑤ 효과 부품들이 매 프레임 부르는 것: 이번 프레임에만 효과를 더 세게 (ScreenFx, HeartbeatEdge, StayIntensify 등)
+    public static void AddBoost(float tv = 0f, float rgb = 0f, float grain = 0f, float vignette = 0f, float redEdge = 0f)
+    {
+        boost.tv += tv;
+        boost.rgb += rgb;
+        boost.grain += grain;
+        boost.vignette += vignette;
+        boost.redEdge = Mathf.Max(boost.redEdge, redEdge);
     }
 
     // ④ 지금 상황(플래그, 씬 이름)에 맞는 색으로 바로 맞춤
@@ -157,21 +172,40 @@ public class ScreenFilter : MonoBehaviour
     void Apply(Preset p)
     {
         current = p;
+        Push();
+    }
+
+    // 기본 색(current) + 이번 프레임 순간 효과(boost)를 실제 화면에 반영
+    void Push()
+    {
+        var p = current;
         color.colorFilter.Override(p.filter);
         color.saturation.Override(p.saturation);
         color.contrast.Override(p.contrast);
         color.postExposure.Override(p.exposure);
-        vignette.intensity.Override(p.vignette);
-        grain.intensity.Override(p.grain);
-        grain.active = p.grain > 0f;
-        rgb.intensity.Override(p.rgbSplit);
-        rgb.active = p.rgbSplit > 0f;
-        Shader.SetGlobalFloat(AnalogTVId, p.analogTV);
+
+        float red = Mathf.Clamp01(boost.redEdge);
+        vignette.intensity.Override(Mathf.Clamp01(p.vignette + boost.vignette + red * 0.35f));
+        vignette.color.Override(Color.Lerp(Color.black, RedEdgeColor, red));
+
+        float g = Mathf.Clamp01(p.grain + boost.grain);
+        grain.intensity.Override(g);
+        grain.active = g > 0f;
+
+        float r = Mathf.Clamp01(p.rgbSplit + boost.rgb);
+        rgb.intensity.Override(r);
+        rgb.active = r > 0f;
+
+        Shader.SetGlobalFloat(AnalogTVId, Mathf.Clamp01(p.analogTV + boost.tv));
     }
 
-    // 카메라가 바뀌면 그 카메라의 화면 효과(Post Processing)를 켜 줌 (씬마다 체크 안 해도 되게)
+    // 매 프레임: 기본 색 + 순간 효과를 화면에 반영하고, 카메라 확인
     void LateUpdate()
     {
+        Push();
+        boost = default;   // 순간 효과는 매 프레임 새로 더해져야 유지됨
+
+        // 카메라가 바뀌면 그 카메라의 화면 효과(Post Processing)를 켜 줌 (씬마다 체크 안 해도 되게)
         var cam = Camera.main;
         if (cam == null || cam == lastCamera) return;
         lastCamera = cam;
