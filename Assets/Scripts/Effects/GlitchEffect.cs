@@ -23,6 +23,8 @@ public class GlitchEffect : MonoBehaviour
     Text centerText;       // 가운데 큰 글자 ([PROGRAM ERROR] 등)
     Text cornerText;       // 오른쪽 위 작은 글자 ([ERROR DETECTED] 등)
     Image blackout;        // 암전용 검은 화면
+    Image flash;           // 화면 번쩍용 (빨강/흰색)
+    Coroutine flashing;    // 지금 실행 중인 번쩍
     Coroutine running;     // 지금 실행 중인 효과
 
     float shakeStrength;   // 카메라 흔들림 세기 (0이면 안 흔듦)
@@ -66,6 +68,26 @@ public class GlitchEffect : MonoBehaviour
             blackout.enabled = true;
             onDone?.Invoke();
         }));
+    }
+
+    // ⑥ 화면 전체가 한 색으로 번쩍했다가 사라짐 (그녀 등장, 빨간 쪽지 등). 다른 글리치를 끊지 않음
+    public void FlashColor(Color color, float seconds = 0.3f)
+    {
+        if (flashing != null) StopCoroutine(flashing);
+        flashing = StartCoroutine(FlashRoutine(color, seconds));
+    }
+
+    IEnumerator FlashRoutine(Color c, float seconds)
+    {
+        flash.enabled = true;
+        for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime)
+        {
+            float k = 1f - t / seconds;
+            flash.color = new Color(c.r, c.g, c.b, c.a * k * k);   // 처음에 세게, 빠르게 사라짐
+            yield return null;
+        }
+        flash.enabled = false;
+        flashing = null;
     }
 
     // ⑤ 암전 켜기 / 풀기
@@ -196,17 +218,19 @@ public class GlitchEffect : MonoBehaviour
             bars[i].enabled = false;
         }
 
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-
-        centerText = NewText("CenterText", font, 64, TextAnchor.MiddleCenter);
+        centerText = NewText("CenterText", GameFont.Bold, 64, TextAnchor.MiddleCenter);
         Stretch(centerText.rectTransform);
 
-        cornerText = NewText("CornerText", font, 28, TextAnchor.UpperRight);
+        cornerText = NewText("CornerText", GameFont.Regular, 28, TextAnchor.UpperRight);
         cornerText.color = new Color(1f, 0.2f, 0.25f);
         var rt = cornerText.rectTransform;
         rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(1f, 1f);
         rt.anchoredPosition = new Vector2(-30f, -24f);
         rt.sizeDelta = new Vector2(600f, 60f);
+
+        flash = NewImage("Flash");
+        Stretch(flash.rectTransform);
+        flash.enabled = false;
 
         blackout = NewImage("Blackout");   // 맨 마지막에 만들어서 가장 위에 그려짐
         blackout.color = Color.black;
