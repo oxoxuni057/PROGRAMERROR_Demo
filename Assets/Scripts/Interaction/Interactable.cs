@@ -7,6 +7,7 @@ public class Interactable : MonoBehaviour
     [SerializeField] UnityEvent onInteract;        // 조사했을 때 실행할 동작 (Inspector에서 연결)
 
     public string Prompt => prompt;
+    public void SetPrompt(string text) => prompt = text;   // 코드로 만든 물체(문 연결 표 등)용
 
     // 플레이어가 E를 누르면 이 함수가 실행됨
     public virtual void Interact(PlayerController player)
