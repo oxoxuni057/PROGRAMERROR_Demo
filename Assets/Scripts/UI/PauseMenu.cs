@@ -27,7 +27,7 @@ public class PauseMenu : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        var font = GameFont.Regular;
         var canvas = MenuList.MakeCanvas(transform, "PauseCanvas", 600);   // 대화창(500) 위, 글리치(900) 아래
         root = MenuList.MakeFullImage(canvas.transform, new Color(0f, 0f, 0f, 0.7f)).gameObject;
         MenuList.MakeText(root.transform, font, "일시정지", 56, 180, new Color(0.93f, 0.93f, 0.9f));
