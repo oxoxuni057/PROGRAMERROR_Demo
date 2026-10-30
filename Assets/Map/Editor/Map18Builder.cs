@@ -536,6 +536,45 @@ public static class Map18Builder
         return c == 'd' || c == 'x';
     }
 
+    static bool NearStairs(Plan p, int x, int y)
+    {
+        int w = p.G.GetLength(0);
+        int h = p.G.GetLength(1);
+        for (int dx = -1; dx <= 1; dx++)
+            for (int dy = -1; dy <= 1; dy++)
+            {
+                int nx = x + dx;
+                int ny = y + dy;
+                if (nx >= 0 && ny >= 0 && nx < w && ny < h && p.G[nx, ny] == 's') return true;
+            }
+        return false;
+    }
+
+    static string WindowTile(Plan p, int x, int y)
+    {
+        if (NearStairs(p, x, y)) return "railing";
+        int w = p.G.GetLength(0);
+        if (y > 0 && Walk(p.G[x, y - 1])) return "window_t";
+        if (x > 0 && Walk(p.G[x - 1, y])) return "window_l";
+        if (x < w - 1 && Walk(p.G[x + 1, y])) return "window_r";
+        return "railing";
+    }
+
+    static string DoorTile(Plan p, int x, int y)
+    {
+        if (!IsDoor(p.G[x, y])) return null;
+        int w = p.G.GetLength(0);
+        int h = p.G.GetLength(1);
+        int x0 = x, x1 = x, y0 = y, y1 = y;
+        while (x0 > 0 && IsDoor(p.G[x0 - 1, y])) x0--;
+        while (x1 < w - 1 && IsDoor(p.G[x1 + 1, y])) x1++;
+        while (y0 > 0 && IsDoor(p.G[x, y0 - 1])) y0--;
+        while (y1 < h - 1 && IsDoor(p.G[x, y1 + 1])) y1++;
+        bool across = x1 - x0 >= y1 - y0;
+        if (across ? x != (x0 + x1) / 2 : y != (y0 + y1) / 2) return null;
+        return (x0 + y0) % 2 == 0 ? "" : "_purple";
+    }
+
     static string Key(Plan p, Mark r)
     {
         return p.Scene + "/" + r.Name + "@" + r.DX;
@@ -589,10 +628,17 @@ public static class Map18Builder
             {
                 if (!Walk(p.G[x, y])) continue;
                 char a = p.G[x, y - 1];
-                if (Walk(a) || a == 'v' || a == 'g') continue;
-                bool door = IsDoor(a);
-                wt[x, y - 1] = door ? "door_lower" : "face_lower";
-                if (y >= 2 && !Walk(p.G[x, y - 2])) wt[x, y - 2] = door ? "door_upper" : "face_upper";
+                if (Walk(a)) continue;
+                if (a == 'v' || a == 'g')
+                {
+                    if (p.G[x, y] == 's' || NearStairs(p, x, y - 1)) continue;
+                    wt[x, y - 1] = "window_lower";
+                    if (y >= 2 && (p.G[x, y - 2] == 'v' || p.G[x, y - 2] == 'g')) wt[x, y - 2] = "window_upper";
+                    continue;
+                }
+                string dt = DoorTile(p, x, y - 1);
+                wt[x, y - 1] = dt != null ? "door_lower" + dt : "face_lower";
+                if (y >= 2 && !Walk(p.G[x, y - 2])) wt[x, y - 2] = dt != null ? "door_upper" + dt : "face_upper";
                 if (y >= 3 && !Walk(p.G[x, y - 3]) && wt[x, y - 3] == null) wt[x, y - 3] = "wall_edge";
             }
         }
@@ -619,13 +665,17 @@ public static class Map18Builder
                 }
                 if (c == 'v' || c == 'g')
                 {
-                    if (near4) wt[x, y] = "railing";
+                    if (near4) wt[x, y] = WindowTile(p, x, y);
                     continue;
                 }
                 if (!near8) continue;
                 if (c == 'E') wt[x, y] = "exit";
                 else if (c == 'M') wt[x, y] = "main_door";
-                else if (IsDoor(c) && near4) wt[x, y] = "door";
+                else if (IsDoor(c) && near4)
+                {
+                    string dt = DoorTile(p, x, y);
+                    wt[x, y] = dt != null ? "door" + dt : "wall_edge";
+                }
                 else wt[x, y] = "wall_edge";
             }
         }
@@ -1210,6 +1260,9 @@ public static class Map18Builder
             p.Rect(0, 8, 31, 31, Hex("#3F4A3C"));
             p.Rect(0, 4, 31, 8, wood);
         }, false);
+
+        foreach (var n in new[] { "door_upper_purple", "door_lower_purple", "door_purple", "window_upper", "window_lower", "window_t", "window_l", "window_r" })
+            t[n] = MakeTile(n, p => p.Fill(light), false);
 
         t["collision"] = MakeTile("collision", p =>
         {
