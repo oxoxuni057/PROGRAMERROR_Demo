@@ -35,11 +35,11 @@ public class ScreenFilter : MonoBehaviour
     };
     static readonly Preset InspectionPreset = new Preset   // 점검: 차갑고 어두운 청회색 + 노이즈 + RGB 어긋남
     {
-        filter = new Color(0.70f, 0.86f, 0.92f), saturation = -55f, contrast = 20f, exposure = -1.0f, vignette = 0.6f, grain = 0.9f, rgbSplit = 0.6f, analogTV = 0.5f,
+        filter = new Color(0.70f, 0.86f, 0.92f), saturation = -55f, contrast = 20f, exposure = -0.4f, vignette = 0.45f, grain = 0.9f, rgbSplit = 0.6f, analogTV = 0.5f,
     };
     static readonly Preset Floor2Preset = new Preset       // 2층: 점검보다 더 차갑고 어둡게, RGB 더 많이
     {
-        filter = new Color(0.58f, 0.76f, 0.86f), saturation = -65f, contrast = 25f, exposure = -1.5f, vignette = 0.7f, grain = 1f, rgbSplit = 1f, analogTV = 1f,
+        filter = new Color(0.58f, 0.76f, 0.86f), saturation = -65f, contrast = 25f, exposure = -0.8f, vignette = 0.55f, grain = 1f, rgbSplit = 1f, analogTV = 1f,
     };
 
     ColorAdjustments color;
