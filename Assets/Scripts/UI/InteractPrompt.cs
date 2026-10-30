@@ -105,7 +105,7 @@ public class InteractPrompt : MonoBehaviour
         var labelGO = new GameObject("Label", typeof(RectTransform), typeof(Text));
         labelGO.transform.SetParent(boxGO.transform, false);
         label = labelGO.GetComponent<Text>();
-        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        label.font = GameFont.Regular;
         label.fontSize = 26;
         label.color = Color.white;
         label.alignment = TextAnchor.MiddleCenter;

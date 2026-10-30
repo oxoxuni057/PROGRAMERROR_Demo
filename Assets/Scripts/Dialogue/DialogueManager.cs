@@ -321,7 +321,7 @@ public class DialogueManager : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight = 0.5f;
 
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        var font = GameFont.Regular;
 
         // 대사 상자
         var panel = new GameObject("Panel").AddComponent<Image>();

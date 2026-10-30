@@ -16,11 +16,11 @@ public class TitleMenu : MonoBehaviour
 
     void Start()
     {
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        var font = GameFont.Regular;
         var canvas = MenuList.MakeCanvas(transform, "TitleCanvas", 100);
         MenuList.MakeFullImage(canvas.transform, Color.black);
         title = MenuList.MakeText(canvas.transform, font, "PROGRAM ERROR", 110, 160, new Color(0.93f, 0.93f, 0.9f));
-        title.fontStyle = FontStyle.Bold;
+        title.font = GameFont.Bold;
         MenuList.MakeText(canvas.transform, font, "W·S 이동    E 선택", 24, -420, new Color(0.45f, 0.45f, 0.42f));
         menu = new MenuList(canvas.transform, font, new[] { "새로 시작", "종료" }, 40, -80, 80);
         glitchTimer = Random.Range(2f, 5f);

@@ -240,7 +240,7 @@ public class RuleBook : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
-        font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        font = GameFont.Regular;
         BuildUI();
         bookRoot.SetActive(false);
     }
@@ -505,7 +505,7 @@ public class RuleBook : MonoBehaviour
 
         var title = CreateText("Title", paper, 52, TextAnchor.MiddleCenter, new Color(0.15f, 0.1f, 0.07f));
         title.text = "지  침  서";
-        title.fontStyle = FontStyle.Bold;
+        title.font = GameFont.Bold;
         Place(title.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1),
               new Vector2(0, -40), new Vector2(0, 80));
 
