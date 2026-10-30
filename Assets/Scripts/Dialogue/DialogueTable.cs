@@ -15,6 +15,7 @@ using UnityEngine;
 //  - 실행 : 이 줄을 넘길 때(선택지는 고를 때) 실행. 여러 개는 ; 로 구분
 //           flag:이름  unflag:이름  rule:규칙id  strike:규칙id  rollback:이유  glitch  glitch:글자
 //           goto:다른id (대화가 끝나고 이어서)   event:이름 (Talker의 Events에 연결한 동작)
+//           corner:글자 (오른쪽 위 짧은 깜빡임)  programerror ([PROGRAM ERROR] + 암전)  blackout_off (암전 풀기)
 //  - id 칸이 #으로 시작하면 메모(무시)
 public static class DialogueTable
 {
@@ -168,6 +169,9 @@ public static class DialogueTable
                 case "rule":     result += () => GiveRule(arg); break;
                 case "rollback": result += () => Rollback.Play(arg); break;
                 case "glitch":   result += () => { if (GlitchEffect.Instance != null) GlitchEffect.Instance.Play(0.8f, arg, 0.15f); }; break;
+                case "corner":   result += () => { if (GlitchEffect.Instance != null) GlitchEffect.Instance.FlashCorner(arg, 0.4f); }; break;
+                case "programerror": result += () => { if (GlitchEffect.Instance != null) GlitchEffect.Instance.PlayProgramError(1.5f); }; break;
+                case "blackout_off": result += () => { if (GlitchEffect.Instance != null) GlitchEffect.Instance.HideBlackout(); }; break;
                 case "event":    result += () => { if (source != null) source.RunEvent(arg); }; break;
                 default: Debug.LogWarning($"[대사 표] 모르는 실행: {raw}"); break;
             }
