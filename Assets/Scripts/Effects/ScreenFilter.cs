@@ -4,7 +4,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
-// 화면 색 필터: 정상 세계 / 점검 세계(누런 겨자색) / 2층(더 어둡게)
+// 화면 색 필터: 정상 세계 / 점검 세계(차갑고 어두운 청회색, 아날로그 TV 느낌) / 2층(더 어둡게)
 // 오프닝의 PROGRAM ERROR 암전 중에 ScreenFilter.EnterInspection() → 다시 켜지면 점검 세계 색
 // 그 뒤로는 씬이 바뀌어도 알아서 점검 색 (2층 씬만 2층 색), ROLLBACK으로 되돌아가면 색도 같이 되돌아감
 public class ScreenFilter : MonoBehaviour
@@ -24,24 +24,26 @@ public class ScreenFilter : MonoBehaviour
         public float exposure;    // 밝기 (음수면 어둡게)
         public float vignette;    // 가장자리 어둡게 (0~1)
         public float grain;       // 필름 노이즈 (0~1)
+        public float rgbSplit;    // 가장자리 RGB 어긋남 (0~1)
     }
 
     static readonly Preset NormalPreset = new Preset
     {
-        filter = Color.white, saturation = 0f, contrast = 0f, exposure = 0f, vignette = 0.15f, grain = 0f,
+        filter = Color.white, saturation = 0f, contrast = 0f, exposure = 0f, vignette = 0.15f, grain = 0f, rgbSplit = 0f,
     };
-    static readonly Preset InspectionPreset = new Preset   // 무드보드 겨자색 #C9B65A 쪽으로
+    static readonly Preset InspectionPreset = new Preset   // 점검: 차갑고 어두운 청회색 + 노이즈 + RGB 어긋남
     {
-        filter = new Color(0.95f, 0.89f, 0.62f), saturation = -35f, contrast = 10f, exposure = -0.1f, vignette = 0.35f, grain = 0.3f,
+        filter = new Color(0.70f, 0.86f, 0.92f), saturation = -55f, contrast = 20f, exposure = -1.0f, vignette = 0.6f, grain = 0.9f, rgbSplit = 0.6f,
     };
-    static readonly Preset Floor2Preset = new Preset       // 2층: 어두운 갈색·올리브
+    static readonly Preset Floor2Preset = new Preset       // 2층: 점검보다 더 차갑고 어둡게, RGB 더 많이
     {
-        filter = new Color(0.78f, 0.70f, 0.48f), saturation = -45f, contrast = 15f, exposure = -0.45f, vignette = 0.5f, grain = 0.4f,
+        filter = new Color(0.58f, 0.76f, 0.86f), saturation = -65f, contrast = 25f, exposure = -1.5f, vignette = 0.7f, grain = 1f, rgbSplit = 1f,
     };
 
     ColorAdjustments color;
     Vignette vignette;
     FilmGrain grain;
+    ChromaticAberration rgb;
     Preset current = NormalPreset;
     Coroutine fading;
     Camera lastCamera;
@@ -144,6 +146,7 @@ public class ScreenFilter : MonoBehaviour
             exposure = Mathf.Lerp(a.exposure, b.exposure, t),
             vignette = Mathf.Lerp(a.vignette, b.vignette, t),
             grain = Mathf.Lerp(a.grain, b.grain, t),
+            rgbSplit = Mathf.Lerp(a.rgbSplit, b.rgbSplit, t),
         };
     }
 
@@ -157,6 +160,8 @@ public class ScreenFilter : MonoBehaviour
         vignette.intensity.Override(p.vignette);
         grain.intensity.Override(p.grain);
         grain.active = p.grain > 0f;
+        rgb.intensity.Override(p.rgbSplit);
+        rgb.active = p.rgbSplit > 0f;
     }
 
     // 카메라가 바뀌면 그 카메라의 화면 효과(Post Processing)를 켜 줌 (씬마다 체크 안 해도 되게)
@@ -183,6 +188,7 @@ public class ScreenFilter : MonoBehaviour
         grain = profile.Add<FilmGrain>(true);
         grain.type.Override(FilmGrainLookup.Medium3);
         grain.response.Override(0.6f);
+        rgb = profile.Add<ChromaticAberration>(true);
         volume.profile = profile;
     }
 }
