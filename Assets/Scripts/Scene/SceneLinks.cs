@@ -8,11 +8,13 @@ using UnityEngine.SceneManagement;
 // → 맵 담당이 만든 씬 파일을 건드리지 않고 이동을 연결할 수 있음
 //
 // 파일: Assets/Resources/Map/scene_links.csv  (CSV UTF-8)
-// 열:  씬 | 종류 | 이름 | x | y | 너비 | 높이 | 가는 씬 | 가는 도착 | 표시 | 메시지
+// 열:  씬 | 종류 | 이름 | x | y | 너비 | 높이 | 가는 씬 | 가는 도착 | 표시 | 메시지 | 조건 | 시간 | 이유
 //  - 종류 문   : E로 조사하면 [가는 씬]의 [가는 도착] 위치로 이동. 표시 = 머리 위 글자 (들어가기 등)
 //  - 종류 도착 : 이 씬에 들어왔을 때 나타나는 위치. 이름 = 도착 이름 (다른 문의 "가는 도착"에 씀)
 //              이름이 default인 도착 = 처음 시작하거나 따로 정하지 않았을 때의 위치
 //  - 종류 잠김 : 조사하면 [메시지]만 나오는 문
+//  - 종류 금지조사 : 조사하면 규칙 위반 → [메시지] 한 줄 뒤 ROLLBACK ([조건]일 때만, [이유]는 Console용)
+//  - 종류 금지구역 : 들어가면 규칙 위반 → ROLLBACK. [시간]초 넘게 머물 때만 위반하게 할 수도 있음
 //  - 좌표는 Unity 월드 좌표 (1 = 한 칸). 씬 칸이 #으로 시작하면 메모
 public static class SceneLinks
 {
@@ -22,7 +24,8 @@ public static class SceneLinks
 
     public class Row
     {
-        public string scene, kind, name, toScene, toSpawn, show, message;
+        public string scene, kind, name, toScene, toSpawn, show, message, condition, reason;
+        public float seconds;
         public Vector2 pos, size;
     }
 
@@ -69,6 +72,21 @@ public static class SceneLinks
                     var locked = go.AddComponent<LockedDoor>();
                     locked.Setup(string.IsNullOrEmpty(r.message) ? "잠겨 있다." : r.message);
                     locked.SetPrompt(string.IsNullOrEmpty(r.show) ? "조사하기" : r.show);
+                    break;
+                }
+                case "금지조사":
+                {
+                    AddTrigger(go, r.size);
+                    var f = go.AddComponent<ForbiddenInteract>();
+                    f.Setup(r.condition, r.message, string.IsNullOrEmpty(r.reason) ? r.name : r.reason);
+                    f.SetPrompt(string.IsNullOrEmpty(r.show) ? "조사하기" : r.show);
+                    break;
+                }
+                case "금지구역":
+                {
+                    AddTrigger(go, r.size);
+                    go.AddComponent<ForbiddenZone>().Setup(r.condition, r.seconds, r.message,
+                        string.IsNullOrEmpty(r.reason) ? r.name : r.reason);
                     break;
                 }
                 case "도착":
@@ -153,7 +171,8 @@ public static class SceneLinks
         }
         int cScene = Col("씬", 0), cKind = Col("종류", 1), cName = Col("이름", 2), cX = Col("x", 3), cY = Col("y", 4),
             cW = Col("너비", 5), cH = Col("높이", 6), cTo = Col("가는 씬", 7), cToSpawn = Col("가는 도착", 8),
-            cShow = Col("표시", 9), cMsg = Col("메시지", 10);
+            cShow = Col("표시", 9), cMsg = Col("메시지", 10), cCond = Col("조건", 11), cSec = Col("시간", 12),
+            cReason = Col("이유", 13);
 
         for (int i = 1; i < records.Count; i++)
         {
@@ -169,6 +188,7 @@ public static class SceneLinks
                 scene = scene, kind = Get(cKind), name = Get(cName),
                 pos = new Vector2(Num(cX, 0f), Num(cY, 0f)), size = new Vector2(Num(cW, 1f), Num(cH, 1f)),
                 toScene = Get(cTo), toSpawn = Get(cToSpawn), show = Get(cShow), message = Get(cMsg),
+                condition = Get(cCond), seconds = Num(cSec, 0f), reason = Get(cReason),
             });
         }
         return result;
