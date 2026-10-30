@@ -285,7 +285,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6306737159005427d9e61bf350ef560a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TitleMenu
-  startScene: Test_Subin
+  startScene: "18\uAD00_3\uCE35"
   startSpawnId: 
 --- !u!4 &1976030861
 Transform:
