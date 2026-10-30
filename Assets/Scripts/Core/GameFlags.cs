@@ -27,6 +27,20 @@ public static class GameFlags
         if (flags.Remove(flag)) Debug.Log($"[플래그 OFF] {flag}");
     }
 
+    // 조건 검사: "flag1 flag2" = 둘 다 켜짐, "!flag" = 꺼져 있음. 비어 있으면 항상 true
+    public static bool Check(string condition)
+    {
+        if (string.IsNullOrWhiteSpace(condition)) return true;
+        foreach (var raw in condition.Split(' '))
+        {
+            var token = raw.Trim();
+            if (token.Length == 0) continue;
+            bool not = token.StartsWith("!");
+            if (Has(not ? token.Substring(1) : token) == not) return false;
+        }
+        return true;
+    }
+
     // 나중에 ROLLBACK(체크포인트로 되돌리기)에서 사용
     public static List<string> Snapshot() => new List<string>(flags);
 
