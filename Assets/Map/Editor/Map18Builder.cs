@@ -700,6 +700,13 @@ public static class Map18Builder
                 BuildRoom(spec.Type, p.Scene + "_" + spec.Name, true);
     }
 
+    [MenuItem("PROGRAMERROR/맵/기숙사 방 만들기")]
+    public static void BuildDormMenu()
+    {
+        if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+        BuildRoom("기숙사", "기숙사_방", true);
+    }
+
     [MenuItem("PROGRAMERROR/맵/기본 방 템플릿 만들기 (교실·식당·화장실)")]
     public static void BuildTemplatesMenu()
     {
@@ -719,11 +726,11 @@ public static class Map18Builder
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var t = PrepareTiles();
 
-        int iw = type == "식당" ? 20 : type == "화장실" ? 12 : 14;
-        int ih = type == "화장실" ? 10 : 12;
+        int iw = type == "식당" ? 20 : type == "화장실" ? 12 : type == "기숙사" ? 6 : 14;
+        int ih = type == "화장실" || type == "기숙사" ? 10 : 12;
         int w = iw + 2;
         int h = ih + 4;
-        string floorTile = type == "식당" ? "floor_cafeteria" : type == "화장실" ? "floor_toilet" : "floor_classroom";
+        string floorTile = type == "식당" ? "floor_cafeteria" : type == "화장실" ? "floor_toilet" : type == "기숙사" ? "floor_dorm" : "floor_classroom";
         int doorX = iw / 2;
 
         var grid = new GameObject("Grid").AddComponent<Grid>();
@@ -771,6 +778,36 @@ public static class Map18Builder
             for (int y = 7; y <= ih; y += 3)
                 for (int x = 3; x + 2 <= iw - 1; x += 6)
                     for (int k = 0; k < 3; k++) decor.SetTile(Cell(x + k, y), t["table"]);
+        }
+        else if (type == "기숙사")
+        {
+            string[,] beds =
+            {
+                { "sleep_tl", "sleep_tr" }, { "sleep_ml", "sleep_mr" }, { "sleep_ml2", "sleep_mr2" }, { "sleep_bl", "sleep_br" },
+                { "bed_tl", "bed_tr" }, { "bed_ml", "bed_mr" }, { "bed_ml", "bed_mr_ladder" }, { "bed_bl", "bed_br" }
+            };
+            for (int j = 0; j < 8; j++)
+                for (int k = 0; k < 2; k++)
+                {
+                    decor.SetTile(Cell(1 + k, 3 + j), t[beds[j, k]]);
+                    col.SetTile(Cell(1 + k, 3 + j), t["collision"]);
+                }
+            decor.SetTile(Cell(3, 5), t["chair"]);
+            decor.SetTile(Cell(3, 9), t["chair"]);
+            string[] side = { "wardrobe_a", "wardrobe_b", "wardrobe_a", "wardrobe_b", "shoe_a", "shoe_b" };
+            for (int j = 0; j < side.Length; j++)
+            {
+                decor.SetTile(Cell(iw, 7 + j), t[side[j]]);
+                col.SetTile(Cell(iw, 7 + j), t["collision"]);
+            }
+            wallDecor.SetTile(Cell(3, 1), t["window_dorm_ul"]);
+            wallDecor.SetTile(Cell(4, 1), t["window_dorm_ur"]);
+            wallDecor.SetTile(Cell(3, 2), t["window_dorm_ll"]);
+            wallDecor.SetTile(Cell(4, 2), t["window_dorm_lr"]);
+            wallDecor.SetTile(Cell(2, 1), t["curtain_l_u"]);
+            wallDecor.SetTile(Cell(2, 2), t["curtain_l_l"]);
+            wallDecor.SetTile(Cell(5, 1), t["curtain_r_u"]);
+            wallDecor.SetTile(Cell(5, 2), t["curtain_r_l"]);
         }
         else
         {
@@ -1260,6 +1297,9 @@ public static class Map18Builder
             p.Rect(0, 8, 31, 31, Hex("#3F4A3C"));
             p.Rect(0, 4, 31, 8, wood);
         }, false);
+
+        foreach (var n in new[] { "floor_dorm", "chair", "bed_tl", "bed_tr", "bed_ml", "bed_mr", "bed_mr_ladder", "bed_bl", "bed_br", "sleep_tl", "sleep_tr", "sleep_ml", "sleep_mr", "sleep_ml2", "sleep_mr2", "sleep_bl", "sleep_br", "wardrobe_a", "wardrobe_b", "shoe_a", "shoe_b", "window_dorm_ul", "window_dorm_ur", "window_dorm_ll", "window_dorm_lr", "curtain_l_u", "curtain_l_l", "curtain_r_u", "curtain_r_l" })
+            t[n] = MakeTile(n, p => p.Fill(light), false);
 
         foreach (var n in new[] { "door_upper_purple", "door_lower_purple", "door_purple", "window_upper", "window_lower", "window_t", "window_l", "window_r" })
             t[n] = MakeTile(n, p => p.Fill(light), false);
