@@ -808,7 +808,7 @@ public static class Map18Builder
             string[,] beds =
             {
                 { "sleep_tl", "sleep_tr" }, { "sleep_ml", "sleep_mr" }, { "sleep_ml2", "sleep_mr2" }, { "sleep_bl", "sleep_br" },
-                { "bed_tl", "bed_tr" }, { "bed_ml", "bed_mr" }, { "bed_ml", "bed_mr_ladder" }, { "bed_bl", "bed_br" }
+                { "bed_tl", "bed_tr" }, { "bed_ml", "bed_mr" }, { "bed_ml2", "bed_mr_ladder" }, { "bed_bl", "bed_br" }
             };
             for (int j = 0; j < 8; j++)
                 for (int k = 0; k < 2; k++)
@@ -818,6 +818,20 @@ public static class Map18Builder
                 }
             decor.SetTile(Cell(3, 5), t["chair"]);
             decor.SetTile(Cell(3, 9), t["chair"]);
+            string[] desks = { "desk_t", "desk_b", "desk2_t", "desk2_b" };
+            for (int j = 0; j < 4; j++)
+            {
+                int y = 4 + j % 2 + j / 2 * 4;
+                decor.SetTile(Cell(4, y), t[desks[j]]);
+                col.SetTile(Cell(4, y), t["collision"]);
+            }
+            decor.SetTile(Cell(iw, 3), t["fridge"]);
+            col.SetTile(Cell(iw, 3), t["collision"]);
+            decor.SetTile(Cell(iw, 5), t["dry_rack"]);
+            col.SetTile(Cell(iw, 5), t["collision"]);
+            decor.SetTile(Cell(1, ih + 2), t["trash"]);
+            col.SetTile(Cell(1, ih + 2), t["collision"]);
+            decor.SetTile(Cell(5, ih + 2), t["slippers"]);
             string[] side = { "wardrobe_a", "wardrobe_b", "wardrobe_a", "wardrobe_b", "shoe_a", "shoe_b" };
             for (int j = 0; j < side.Length; j++)
             {
@@ -832,6 +846,8 @@ public static class Map18Builder
             wallDecor.SetTile(Cell(2, 2), t["curtain_l_l"]);
             wallDecor.SetTile(Cell(5, 1), t["curtain_r_u"]);
             wallDecor.SetTile(Cell(5, 2), t["curtain_r_l"]);
+            wallDecor.SetTile(Cell(1, 1), t["clock"]);
+            wallDecor.SetTile(Cell(iw, 1), t["aircon"]);
         }
         else
         {
@@ -1327,7 +1343,7 @@ public static class Map18Builder
         foreach (var n in new[] { "carpet_tl", "carpet_t", "carpet_tr", "carpet_l", "carpet_c", "carpet_r", "carpet_bl", "carpet_b", "carpet_br", "counter_v", "stool", "cafe_table_l", "cafe_table_r", "chair_g_up", "chair_g_down", "mondrian_u0", "mondrian_u1", "mondrian_u2", "mondrian_u3", "mondrian_l0", "mondrian_l1", "mondrian_l2", "mondrian_l3", "stall_tl", "stall_tr", "stall_bl", "stall_br", "sink", "stall_f_tl", "stall_f_tr", "stall_f_bl", "stall_f_br", "sink_f" })
             t[n] = MakeTile(n, p => p.Fill(light), false);
 
-        foreach (var n in new[] { "floor_dorm", "chair", "bed_tl", "bed_tr", "bed_ml", "bed_mr", "bed_mr_ladder", "bed_bl", "bed_br", "sleep_tl", "sleep_tr", "sleep_ml", "sleep_mr", "sleep_ml2", "sleep_mr2", "sleep_bl", "sleep_br", "wardrobe_a", "wardrobe_b", "shoe_a", "shoe_b", "window_dorm_ul", "window_dorm_ur", "window_dorm_ll", "window_dorm_lr", "curtain_l_u", "curtain_l_l", "curtain_r_u", "curtain_r_l" })
+        foreach (var n in new[] { "floor_dorm", "chair", "bed_tl", "bed_tr", "bed_ml", "bed_mr", "bed_mr_ladder", "bed_bl", "bed_br", "sleep_tl", "sleep_tr", "sleep_ml", "sleep_mr", "sleep_ml2", "sleep_mr2", "sleep_bl", "sleep_br", "wardrobe_a", "wardrobe_b", "shoe_a", "shoe_b", "window_dorm_ul", "window_dorm_ur", "window_dorm_ll", "window_dorm_lr", "curtain_l_u", "curtain_l_l", "curtain_r_u", "curtain_r_l", "bed_ml2", "desk_t", "desk_b", "desk2_t", "desk2_b", "fridge", "dry_rack", "trash", "slippers", "clock", "aircon" })
             t[n] = MakeTile(n, p => p.Fill(light), false);
 
         foreach (var n in new[] { "door_upper_purple", "door_lower_purple", "door_purple", "window_upper", "window_lower", "window_t", "window_l", "window_r" })
