@@ -835,16 +835,19 @@ public static class Map18Builder
         }
         else
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 5; i++)
             {
-                int x0 = 2 + i * 3;
+                int x0 = 1 + i * 2;
                 decor.SetTile(Cell(x0, 3), t["stall_tl"]);
                 decor.SetTile(Cell(x0 + 1, 3), t["stall_tr"]);
                 decor.SetTile(Cell(x0, 4), t["stall_bl"]);
                 decor.SetTile(Cell(x0 + 1, 4), t["stall_br"]);
             }
-            for (int x = 2; x <= iw - 1; x++) decor.SetTile(Cell(x, ih - 1), t["sink"]);
-            for (int x = iw - 4; x <= iw - 1; x++) wallDecor.SetTile(Cell(x, 2), t["mirror"]);
+            decor.SetTile(Cell(1, ih + 1), t["stall_f_tl"]);
+            decor.SetTile(Cell(2, ih + 1), t["stall_f_tr"]);
+            decor.SetTile(Cell(1, ih + 2), t["stall_f_bl"]);
+            decor.SetTile(Cell(2, ih + 2), t["stall_f_br"]);
+            for (int x = 3; x <= 5; x++) decor.SetTile(Cell(x, ih + 2), t["sink_f"]);
         }
 
         col.gameObject.AddComponent<TilemapCollider2D>();
@@ -1321,7 +1324,7 @@ public static class Map18Builder
             p.Rect(0, 4, 31, 8, wood);
         }, false);
 
-        foreach (var n in new[] { "carpet_tl", "carpet_t", "carpet_tr", "carpet_l", "carpet_c", "carpet_r", "carpet_bl", "carpet_b", "carpet_br", "counter_v", "stool", "cafe_table_l", "cafe_table_r", "chair_g_up", "chair_g_down", "mondrian_u0", "mondrian_u1", "mondrian_u2", "mondrian_u3", "mondrian_l0", "mondrian_l1", "mondrian_l2", "mondrian_l3", "stall_tl", "stall_tr", "stall_bl", "stall_br", "sink" })
+        foreach (var n in new[] { "carpet_tl", "carpet_t", "carpet_tr", "carpet_l", "carpet_c", "carpet_r", "carpet_bl", "carpet_b", "carpet_br", "counter_v", "stool", "cafe_table_l", "cafe_table_r", "chair_g_up", "chair_g_down", "mondrian_u0", "mondrian_u1", "mondrian_u2", "mondrian_u3", "mondrian_l0", "mondrian_l1", "mondrian_l2", "mondrian_l3", "stall_tl", "stall_tr", "stall_bl", "stall_br", "sink", "stall_f_tl", "stall_f_tr", "stall_f_bl", "stall_f_br", "sink_f" })
             t[n] = MakeTile(n, p => p.Fill(light), false);
 
         foreach (var n in new[] { "floor_dorm", "chair", "bed_tl", "bed_tr", "bed_ml", "bed_mr", "bed_mr_ladder", "bed_bl", "bed_br", "sleep_tl", "sleep_tr", "sleep_ml", "sleep_mr", "sleep_ml2", "sleep_mr2", "sleep_bl", "sleep_br", "wardrobe_a", "wardrobe_b", "shoe_a", "shoe_b", "window_dorm_ul", "window_dorm_ur", "window_dorm_ll", "window_dorm_lr", "curtain_l_u", "curtain_l_l", "curtain_r_u", "curtain_r_l" })
