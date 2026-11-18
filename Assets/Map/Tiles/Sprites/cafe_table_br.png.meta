@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: d7f3e1931a65442ba2ac3e966b472c4a
+guid: bce568a32f704f7fbd093d0c749851f4
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5915024241472185020
-    second: cafe_table_r_0
+      213: -1516022428106700949
+    second: cafe_table_br_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,7 +100,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: cafe_table_r_0
+      name: cafe_table_br_0
       rect:
         serializedVersion: 2
         x: 0
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 80c29d48b2af4ad682b104bd3482cf93
-      internalID: -5915024241472185020
+      spriteID: 0981e9af2b8449aa0800000000000000
+      internalID: -1516022428106700949
       vertices: []
       indices: 
       edges: []
@@ -125,7 +125,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 1cc2275368a0423591abdec60774009f
+    spriteID: 232396d9ab03436e0800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      cafe_table_r_0: -5915024241472185020
+      cafe_table_br_0: -1516022428106700949
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
