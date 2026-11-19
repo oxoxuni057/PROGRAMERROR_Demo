@@ -770,10 +770,9 @@ public static class Map18Builder
                 decor.SetTile(Cell(x, 3), t["table"]);
                 col.SetTile(Cell(x, 3), t["collision"]);
             }
-            for (int y = 5; y <= 11; y += 3)
-                for (int x = 2; x <= 12; x++)
+            for (int y = 6; y <= 12; y += 3)
+                foreach (int x in new[] { 1, 2, 4, 5, 10, 11, 13, 14 })
                 {
-                    if ((x - 2) % 3 == 2) continue;
                     decor.SetTile(Cell(x, y), t["desk_s"]);
                     col.SetTile(Cell(x, y), t["collision"]);
                     decor.SetTile(Cell(x, y + 1), t["chair_b"]);
@@ -788,7 +787,7 @@ public static class Map18Builder
                     string hz = x == 5 ? "l" : x == 19 ? "r" : "";
                     floor.SetTile(Cell(x, y), t["carpet_" + (v + hz == "" ? "c" : v + hz)]);
                 }
-            for (int y = 4; y <= 13; y++)
+            for (int y = 3; y <= 14; y++)
             {
                 decor.SetTile(Cell(1, y), t["counter_v"]);
                 col.SetTile(Cell(1, y), t["collision"]);
@@ -827,10 +826,9 @@ public static class Map18Builder
                 }
             decor.SetTile(Cell(3, 5), t["chair"]);
             decor.SetTile(Cell(3, 9), t["chair"]);
-            decor.SetTile(Cell(iw, 5), t["dry_rack"]);
-            col.SetTile(Cell(iw, 5), t["collision"]);
+            decor.SetTile(Cell(iw, 3), t["dry_rack"]);
+            col.SetTile(Cell(iw, 3), t["collision"]);
             decor.SetTile(Cell(1, ih + 2), t["trash"]);
-            col.SetTile(Cell(1, ih + 2), t["collision"]);
             decor.SetTile(Cell(5, ih + 2), t["slippers"]);
             string[] side = { "wardrobe_a", "wardrobe_b", "wardrobe_a", "wardrobe_b", "shoe_a", "shoe_b" };
             for (int j = 0; j < side.Length; j++)
