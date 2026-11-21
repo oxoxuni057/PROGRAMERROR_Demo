@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 // 에디터 Scene 화면에 문 연결 표(scene_links.csv)의 문·도착 위치를 미리 그려 줌 (Play 안 해도 보임)
-//  초록 상자 = 문, 회색 상자 = 잠긴 문, 하늘색 원 = 도착 위치, 빨간 상자 = 금지조사·금지구역
+//  초록 상자 = 문, 회색 상자 = 잠긴 문, 하늘색 원 = 도착 위치, 빨간 상자 = 금지조사·금지구역, 노란 상자 = 대화·조사·규칙·구역대사
 [InitializeOnLoad]
 static class SceneLinksPreview
 {
@@ -58,6 +58,15 @@ static class SceneLinksPreview
                     Handles.DrawWireCube(p, r.size);
                     style.normal.textColor = Color.red;
                     Handles.Label(p + Vector3.up * (r.size.y * 0.5f + 0.4f), $"{r.kind}: {r.name}", style);
+                    break;
+                case "대화":
+                case "조사":
+                case "규칙":
+                case "구역대사":
+                    Handles.color = Color.yellow;
+                    Handles.DrawWireCube(p, r.size);
+                    style.normal.textColor = Color.yellow;
+                    Handles.Label(p + Vector3.up * (r.size.y * 0.5f + 0.4f), $"{r.kind}: {r.name} ({r.message})", style);
                     break;
                 case "도착":
                     Handles.color = Color.cyan;

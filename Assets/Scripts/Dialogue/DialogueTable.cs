@@ -18,7 +18,7 @@ using UnityEngine;
 //           corner:글자 (오른쪽 위 짧은 깜빡임)  programerror ([PROGRAM ERROR] + 암전)  blackout_off (암전 풀기)
 //           blackout_on (암전)  inspection (점검 세계 색으로)  scene:씬이름 또는 scene:씬이름/도착이름 (씬 이동)
 //           cutscene_on / cutscene_off (대사 뒤 검은 컷신 배경)  wake:초 (N초 뒤 암전·컷신 배경 걷힘)
-//           checkpoint (지금을 체크포인트로)  sound:이름 (효과음)  loop:이름 / stoploop:이름 (반복 소리)
+//           chapter_end (챕터 끝 화면 → 타이틀)  checkpoint (지금을 체크포인트로)  sound:이름 (효과음)  loop:이름 / stoploop:이름 (반복 소리)
 //           rule:규칙id 는 씬의 RuleGiver → 없으면 규칙 표(rules.csv)에서 찾음
 //  - id 칸이 #으로 시작하면 메모(무시)
 public static class DialogueTable
@@ -194,6 +194,7 @@ public static class DialogueTable
                     break;
                 }
                 case "checkpoint":   result += () => StoryDirector.SaveCheckpoint(); break;
+                case "chapter_end":  result += () => StoryDirector.ChapterEnd(string.IsNullOrEmpty(arg) ? "[CHAPTER 1 END]" : arg); break;
                 case "sound":        result += () => GameSound.Play(arg); break;
                 case "loop":         result += () => GameSound.StartLoop(arg); break;
                 case "stoploop":     result += () => GameSound.StopLoop(arg); break;

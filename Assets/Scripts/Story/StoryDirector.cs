@@ -19,6 +19,7 @@ using UnityEngine.UI;
 //     cutscene_on / cutscene_off              검은 컷신 배경 켜기·끄기
 //     wake:초                                 N초 뒤 PROGRAM ERROR 암전과 컷신 배경을 걷음 (점검 세계로 깨어남)
 //     checkpoint                              지금 위치·플래그·지침서를 체크포인트로 저장
+//     chapter_end                             암전 → [CHAPTER 1 END] → 아무 키나 누르면 타이틀로
 public class StoryDirector : MonoBehaviour
 {
     public static StoryDirector Instance { get; private set; }
@@ -32,6 +33,8 @@ public class StoryDirector : MonoBehaviour
     static readonly HashSet<string> played = new HashSet<string>();   // 이미 나온 시작 대사
 
     Image cutsceneBlack;
+    Text endText;
+    bool ending;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetOnPlay() { rows = null; played.Clear(); }
@@ -62,7 +65,15 @@ public class StoryDirector : MonoBehaviour
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        if (scene.name == "Title") { played.Clear(); SetCutscene(false); return; }   // 새로 시작하면 처음부터
+        if (scene.name == "Title")   // 타이틀로 돌아오면 처음 상태로 (점검 색·배경 잡음도 꺼짐)
+        {
+            played.Clear();
+            SetCutscene(false);
+            GameFlags.Restore(new string[0]);
+            RuleBook.Restore(null);
+            if (ScreenFilter.Instance != null) ScreenFilter.Instance.Refresh();
+            return;
+        }
 
         Load();
         foreach (var r in rows)
@@ -115,6 +126,44 @@ public class StoryDirector : MonoBehaviour
         SceneTransition.Instance.LoadScene(sceneName.Trim(), spawn.Trim());
     }
 
+    // ───── 챕터 끝 ─────
+    public static void ChapterEnd(string title = "[CHAPTER 1 END]")
+    {
+        if (Instance != null && !Instance.ending) Instance.StartCoroutine(Instance.EndRoutine(title));
+    }
+
+    IEnumerator EndRoutine(string title)
+    {
+        ending = true;
+        PlayerController.SetLock(this, true);
+        SetCutscene(true);
+        GameSound.Play("glitch_short", 0.6f);
+        yield return new WaitForSecondsRealtime(1.5f);
+
+        endText.text = title;
+        endText.enabled = true;
+        for (float t = 0f; t < 1.5f; t += Time.unscaledDeltaTime)
+        {
+            endText.color = new Color(0.93f, 0.93f, 0.9f, t / 1.5f);
+            yield return null;
+        }
+        endText.color = new Color(0.93f, 0.93f, 0.9f, 1f);
+        yield return new WaitForSecondsRealtime(1.5f);
+
+        // 아무 키나 누르면 타이틀로
+        var kb = UnityEngine.InputSystem.Keyboard.current;
+        while (kb == null || !kb.anyKey.wasPressedThisFrame)
+        {
+            yield return null;
+            kb = UnityEngine.InputSystem.Keyboard.current;
+        }
+
+        endText.enabled = false;
+        PlayerController.SetLock(this, false);
+        ending = false;
+        SceneTransition.Instance.LoadScene("Title");
+    }
+
     public static void SaveCheckpoint()
     {
         var p = FindAnyObjectByType<PlayerController>();
@@ -141,6 +190,23 @@ public class StoryDirector : MonoBehaviour
         rt.offsetMin = Vector2.zero;
         rt.offsetMax = Vector2.zero;
         cutsceneBlack.enabled = false;
+
+        // 챕터 끝 글자 (가운데)
+        var textGO = new GameObject("챕터 끝 글자");
+        textGO.transform.SetParent(transform, false);
+        endText = textGO.AddComponent<Text>();
+        endText.font = GameFont.Bold;
+        endText.fontSize = 48;
+        endText.alignment = TextAnchor.MiddleCenter;
+        endText.horizontalOverflow = HorizontalWrapMode.Overflow;
+        endText.verticalOverflow = VerticalWrapMode.Overflow;
+        endText.raycastTarget = false;
+        var trt = endText.rectTransform;
+        trt.anchorMin = Vector2.zero;
+        trt.anchorMax = Vector2.one;
+        trt.offsetMin = Vector2.zero;
+        trt.offsetMax = Vector2.zero;
+        endText.enabled = false;
     }
 
     // ───── 파일 읽기 ─────

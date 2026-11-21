@@ -400,6 +400,7 @@ public class RuleBook : MonoBehaviour
     float Measure(Line ln)
     {
         Apply(measure, ln);
+        measure.color = Color.clear;   // 재기용 글자는 화면에 안 보이게 (Apply가 색을 바꿔서 겹쳐 보이던 문제)
         float width = PaperWidth - Margin * 2f - ln.indent;
         var settings = measure.GetGenerationSettings(new Vector2(width, 0f));
         return generator.GetPreferredHeight(ln.text, settings) / measure.pixelsPerUnit;
