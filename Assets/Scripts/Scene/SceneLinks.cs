@@ -15,6 +15,13 @@ using UnityEngine.SceneManagement;
 //  - 종류 잠김 : 조사하면 [메시지]만 나오는 문
 //  - 종류 금지조사 : 조사하면 규칙 위반 → [메시지] 한 줄 뒤 ROLLBACK ([조건]일 때만, [이유]는 Console용)
 //  - 종류 금지구역 : 들어가면 규칙 위반 → ROLLBACK. [시간]초 넘게 머물 때만 위반하게 할 수도 있음
+//  - 종류 대화 : 말 걸 수 있는 사람. [메시지] = 대사 표 id, [표시] = 머리 위 글자(기본 "말 걸기"), [조건] = 있을 조건
+//              그림이 아직 없어서 색깔 네모로 보임 (이름에 친구/학생/??? 등이 들어가면 색이 바뀜)
+//  - 종류 조사 : 대화와 같지만 안 보이는 조사 지점 (칠판, 게시판, 거울 등). [표시] 기본 "조사하기"
+//  - 종류 규칙 : 바닥의 종이. 주우면 [메시지] = 규칙 id(rules.csv)가 지침서에 적힘. [이유] = 주울 때 나오는 한 줄(비우면 기본)
+//  - 종류 표시 : 노란 화살표 ("여기로 가세요"). [조건]일 때만 보임. 조사 지점에는 작은 화살표가 자동으로 붙음
+//  - 종류 글씨 : 맵 위에 [메시지] 글자를 씀 (칠판의 이름 등). [조건]일 때만 보임
+//  - 종류 구역대사 : 밟으면 [메시지] = 대사 표 id 대화가 한 번 나옴 ([조건]일 때만)
 //  - 좌표는 Unity 월드 좌표 (1 = 한 칸). 씬 칸이 #으로 시작하면 메모
 public static class SceneLinks
 {
@@ -89,6 +96,46 @@ public static class SceneLinks
                         string.IsNullOrEmpty(r.reason) ? r.name : r.reason);
                     break;
                 }
+                case "대화":
+                case "조사":
+                {
+                    AddTrigger(go, r.size);
+                    if (r.kind == "대화") AddPlaceholder(go, r.size, ColorOf(r.name));
+                    else TableMarker.AddArrow(go, new Vector2(0f, r.size.y * 0.5f + 0.2f), 1f, new Color(1f, 0.85f, 0.3f, 0.9f));
+                    go.AddComponent<TableTalk>().Setup(r.message);
+                    go.GetComponent<TableTalk>().SetPrompt(string.IsNullOrEmpty(r.show) ? (r.kind == "대화" ? "말 걸기" : "조사하기") : r.show);
+                    go.AddComponent<TableCondition>().Setup(r.condition);
+                    break;
+                }
+                case "규칙":
+                {
+                    AddTrigger(go, r.size);
+                    AddPlaceholder(go, new Vector2(0.45f, 0.35f), new Color(0.92f, 0.9f, 0.8f));
+                    var paper = go.AddComponent<TableRulePaper>();
+                    paper.Setup(r.message, r.reason);
+                    paper.SetPrompt(string.IsNullOrEmpty(r.show) ? "줍기" : r.show);
+                    string cond = "!rule_" + r.message + (string.IsNullOrEmpty(r.condition) ? "" : " " + r.condition);
+                    go.AddComponent<TableCondition>().Setup(cond);
+                    break;
+                }
+                case "구역대사":
+                {
+                    AddTrigger(go, r.size);
+                    go.AddComponent<TableTalkZone>().Setup(r.message, r.condition);
+                    break;
+                }
+                case "표시":
+                {
+                    TableMarker.AddArrow(go, Vector2.zero, 1.6f, new Color(1f, 0.85f, 0.2f));
+                    go.AddComponent<TableCondition>().Setup(r.condition);
+                    break;
+                }
+                case "글씨":
+                {
+                    TableMarker.AddText(go, r.message, new Color(0.95f, 0.95f, 0.9f));
+                    go.AddComponent<TableCondition>().Setup(r.condition);
+                    break;
+                }
                 case "도착":
                 {
                     go.AddComponent<SpawnPoint>().Setup(r.name);
@@ -110,6 +157,29 @@ public static class SceneLinks
         var col = go.AddComponent<BoxCollider2D>();
         col.size = new Vector2(Mathf.Max(size.x, 0.5f), Mathf.Max(size.y, 0.5f));
         col.isTrigger = true;   // 길을 막지 않고, E 조사만 되게
+    }
+
+    // ───── 그림이 없을 때 쓰는 색깔 네모 ─────
+    static Sprite square;
+
+    static void AddPlaceholder(GameObject go, Vector2 size, Color color)
+    {
+        if (square == null)
+            square = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4f);
+        var child = new GameObject("임시 그림");
+        child.transform.SetParent(go.transform, false);
+        child.transform.localScale = new Vector3(Mathf.Max(size.x, 0.3f), Mathf.Max(size.y, 0.3f), 1f);
+        var sr = child.AddComponent<SpriteRenderer>();
+        sr.sprite = square;
+        sr.color = color;
+    }
+
+    static Color ColorOf(string name)
+    {
+        if (name.Contains("???")) return new Color(0.55f, 0.35f, 0.75f);
+        if (name.Contains("그녀")) return new Color(0.75f, 0.08f, 0.1f);
+        if (name.Contains("친구")) return new Color(0.35f, 0.55f, 0.85f);
+        return new Color(0.55f, 0.6f, 0.65f);   // 학생, 대학원생 등
     }
 
     static void EnsurePlayerAndCamera(Scene scene, Vector3 spawn)

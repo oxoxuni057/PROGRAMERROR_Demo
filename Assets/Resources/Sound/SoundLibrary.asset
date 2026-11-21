@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cbb52a2f579484e9978d398da76a851, type: 3}
+  m_Name: SoundLibrary
+  m_EditorClassIdentifier: 
+  sounds:
+  - name: ambience_static
+    clip: {fileID: 8300000, guid: a03f67a188544135be4d8f7cf93ed9ea, type: 3}
+  - name: door_open
+    clip: {fileID: 8300000, guid: 7a04962136e144309165334b7bfa08cd, type: 3}
+  - name: footstep_1
+    clip: {fileID: 8300000, guid: 1ffa99de19ee43c9876162ee83d03b42, type: 3}
+  - name: footstep_2
+    clip: {fileID: 8300000, guid: 05b8a9da280f476f94c84cfc65c3af29, type: 3}
+  - name: footstep_3
+    clip: {fileID: 8300000, guid: 0de2e41888654ff69c84a15c7302d960, type: 3}
+  - name: footsteps_run_loop
+    clip: {fileID: 8300000, guid: f70d45e97aca467380e4e708ad1686f4, type: 3}
+  - name: footsteps_walk_loop
+    clip: {fileID: 8300000, guid: f1e95cffd50d4b8680538eb95758af3f, type: 3}
+  - name: glitch_big
+    clip: {fileID: 8300000, guid: 0e3abccb97d5456c9999eb5fb4648447, type: 3}
+  - name: glitch_short
+    clip: {fileID: 8300000, guid: f9409c30fd1a4c1a8a94e31fefb0fc17, type: 3}
+  - name: light_flicker
+    clip: {fileID: 8300000, guid: cfce1fb797ce482cb6932d796451259b, type: 3}
+  - name: light_flicker_multi
+    clip: {fileID: 8300000, guid: 99d6c89c5c224d7cacaf8bd56d656b03, type: 3}
+  - name: light_hum_loop
+    clip: {fileID: 8300000, guid: 2247e1f94a5046ddae8a972cf519218b, type: 3}
+  - name: toilet_door
+    clip: {fileID: 8300000, guid: 9e17035bb4e94d2eb472399ac8eba2cb, type: 3}
+  - name: voice_cut
+    clip: {fileID: 8300000, guid: 533367f20cc741aeb54e8453e7e88dc6, type: 3}

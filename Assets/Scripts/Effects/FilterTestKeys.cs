@@ -7,6 +7,7 @@ using UnityEngine.Rendering.Universal;
 // 사용법: 아무 씬에 빈 오브젝트 → 이 스크립트 붙이기 → ▶ → 숫자 키 / 확인 후 씬은 저장하지 않기
 // 1 정상 / 2 점검 / 3 2층 / 4 오프닝(치지직 → PROGRAM ERROR 암전 → 점검 세계) / 5 ROLLBACK
 // 6 TV 튐 / 7 빨간 번쩍+빨간 가장자리 / 8 쿵쿵 켜기·끄기 / 9 누르고 있는 동안 머물수록 심해짐 / 0 형광등 깜빡임 켜기·끄기
+// F1 문 소리 / F2 형광등 깜빡 소리 / F3 형광등 웅웅 켜기·끄기 / F4 소리 끊김 (배경 잡음은 2·3번, 글리치 소리는 4번에서 자동)
 // 방향키: 카메라 이동, Q/E: 줌
 public class FilterTestKeys : MonoBehaviour
 {
@@ -39,6 +40,7 @@ public class FilterTestKeys : MonoBehaviour
         c.orthographicSize = 8f;
         c.clearFlags = CameraClearFlags.SolidColor;
         c.backgroundColor = Color.black;
+        go.AddComponent<AudioListener>();   // 소리를 듣는 귀 (없으면 소리가 안 남)
 
         var renderers = FindObjectsByType<Renderer>(FindObjectsSortMode.None);
         Vector3 center = Vector3.zero;
@@ -90,6 +92,17 @@ public class FilterTestKeys : MonoBehaviour
         if (kb.digit9Key.wasPressedThisFrame) status = "9 머무는 중... (떼면 돌아옴)";
         if (kb.digit0Key.wasPressedThisFrame) ToggleFlicker();
 
+        // 효과음
+        if (kb.f1Key.wasPressedThisFrame) { GameSound.Play("door_open"); status = "F1 문 소리"; }
+        if (kb.f2Key.wasPressedThisFrame) { GameSound.Play("light_flicker_multi"); status = "F2 형광등 깜빡 소리"; }
+        if (kb.f3Key.wasPressedThisFrame)
+        {
+            humOn = !humOn;
+            if (humOn) GameSound.StartLoop("light_hum_loop", 0.6f); else GameSound.StopLoop("light_hum_loop");
+            status = humOn ? "F3 형광등 웅웅" : "F3 웅웅 끔";
+        }
+        if (kb.f4Key.wasPressedThisFrame) { GameSound.Play("voice_cut"); status = "F4 소리 끊김"; }
+
         if (cam == null) cam = Camera.main;
         if (cam == null) return;
         Vector3 move = Vector3.zero;
@@ -103,6 +116,7 @@ public class FilterTestKeys : MonoBehaviour
     }
 
     bool heartbeatOn;
+    bool humOn;
 
     // 0번: 화면 전체 조명을 형광등처럼 깜빡 (실제로는 랩실 문틈 등 Light 2D 하나에 붙여서 씀)
     void ToggleFlicker()
@@ -151,5 +165,6 @@ public class FilterTestKeys : MonoBehaviour
         GUI.Label(new Rect(16, 12, 900, 30), "[필터 테스트] " + status, style);
         GUI.Label(new Rect(16, 42, 1200, 30), "1 정상  2 점검  3 2층  4 오프닝  5 ROLLBACK  |  방향키 이동  Q/E 줌", style);
         GUI.Label(new Rect(16, 72, 1200, 30), "6 TV 튐  7 빨간 번쩍  8 쿵쿵  9 누르고 있기: 머물수록 심해짐  0 형광등 깜빡임", style);
+        GUI.Label(new Rect(16, 102, 1200, 30), "F1 문  F2 깜빡 소리  F3 웅웅  F4 끊김  (배경 잡음: 2·3번, 글리치 소리: 4번)", style);
     }
 }
