@@ -16,6 +16,10 @@ using UnityEngine;
 //           flag:이름  unflag:이름  rule:규칙id  strike:규칙id  rollback:이유  glitch  glitch:글자
 //           goto:다른id (대화가 끝나고 이어서)   event:이름 (Talker의 Events에 연결한 동작)
 //           corner:글자 (오른쪽 위 짧은 깜빡임)  programerror ([PROGRAM ERROR] + 암전)  blackout_off (암전 풀기)
+//           blackout_on (암전)  inspection (점검 세계 색으로)  scene:씬이름 또는 scene:씬이름/도착이름 (씬 이동)
+//           cutscene_on / cutscene_off (대사 뒤 검은 컷신 배경)  wake:초 (N초 뒤 암전·컷신 배경 걷힘)
+//           checkpoint (지금을 체크포인트로)  sound:이름 (효과음)  loop:이름 / stoploop:이름 (반복 소리)
+//           rule:규칙id 는 씬의 RuleGiver → 없으면 규칙 표(rules.csv)에서 찾음
 //  - id 칸이 #으로 시작하면 메모(무시)
 public static class DialogueTable
 {
@@ -105,6 +109,9 @@ public static class DialogueTable
         return best;
     }
 
+    // 다른 곳(StoryDirector 등)에서 쓰는 조건 검사. 비우면 항상 true
+    public static bool CheckCondition(string cond) => Check(cond);
+
     static bool Check(string cond)
     {
         foreach (var token in Split(cond, ' '))
@@ -173,6 +180,23 @@ public static class DialogueTable
                 case "programerror": result += () => { if (GlitchEffect.Instance != null) GlitchEffect.Instance.PlayProgramError(1.5f); }; break;
                 case "blackout_off": result += () => { if (GlitchEffect.Instance != null) GlitchEffect.Instance.HideBlackout(); }; break;
                 case "event":    result += () => { if (source != null) source.RunEvent(arg); }; break;
+                case "blackout_on": result += () => { if (GlitchEffect.Instance != null) GlitchEffect.Instance.ShowBlackout(); }; break;
+                case "inspection":   result += () => ScreenFilter.EnterInspection(); break;
+                case "scene":        result += () => StoryDirector.GoToScene(arg); break;
+                case "cutscene_on":  result += () => StoryDirector.SetCutscene(true); break;
+                case "cutscene_off": result += () => StoryDirector.SetCutscene(false); break;
+                case "wake":
+                {
+                    float sec = 2f;
+                    float.TryParse(arg, out sec);
+                    if (sec <= 0f) sec = 2f;
+                    result += () => StoryDirector.Wake(sec);
+                    break;
+                }
+                case "checkpoint":   result += () => StoryDirector.SaveCheckpoint(); break;
+                case "sound":        result += () => GameSound.Play(arg); break;
+                case "loop":         result += () => GameSound.StartLoop(arg); break;
+                case "stoploop":     result += () => GameSound.StopLoop(arg); break;
                 default: Debug.LogWarning($"[대사 표] 모르는 실행: {raw}"); break;
             }
         }
@@ -184,7 +208,8 @@ public static class DialogueTable
     {
         foreach (var g in UnityEngine.Object.FindObjectsByType<RuleGiver>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             if (g.ruleId == id) { g.GiveRule(); return; }
-        Debug.LogWarning($"[대사 표] rule:{id} — 씬에 Rule Id가 {id}인 RuleGiver가 없어요");
+        if (RuleTable.Give(id)) return;
+        Debug.LogWarning($"[대사 표] rule:{id} — 씬에 Rule Id가 {id}인 RuleGiver도, 규칙 표(rules.csv)에도 없어요");
     }
 
     // ───── 파일 읽기 ─────

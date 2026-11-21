@@ -51,6 +51,7 @@ public class GlitchEffect : MonoBehaviour
     // ② 화면 전체 치지직: 노이즈 줄 + 흔들림 + (있으면) 가운데 글자
     public void Play(float duration, string message = "", float shake = 0.15f, Action onDone = null)
     {
+        GameSound.Play("glitch_short", 0.8f);
         Restart(GlitchRoutine(duration, message, shake, onDone));
     }
 
@@ -63,6 +64,7 @@ public class GlitchEffect : MonoBehaviour
     // ④ 오프닝 장면 7: 크게 치지직 + [PROGRAM ERROR] → 암전 (암전은 HideBlackout 전까지 유지)
     public void PlayProgramError(float duration = 1.5f, Action onDone = null)
     {
+        GameSound.Play("glitch_big");
         Restart(GlitchRoutine(duration, ProgramErrorText, 0.3f, () =>
         {
             blackout.enabled = true;
