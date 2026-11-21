@@ -95,6 +95,13 @@ public static class DialogueTable
         dm.StartDialogue(lines.ToArray(), next == null ? (Action)null : () => Play(next, source, fallbackSpeaker));
     }
 
+    // 실행 칸 글자를 바로 실행 (예: "rule:common_1; flag:met_unknown"). 오프닝 건너뛰기 등에서 씀
+    public static void RunActions(string action)
+    {
+        string ignored = null;
+        BuildActions(action, null, ref ignored)?.Invoke();
+    }
+
     // ───── 조건 ─────
     static Variant Pick(List<Variant> variants)
     {

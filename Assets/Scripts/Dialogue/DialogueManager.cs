@@ -283,6 +283,17 @@ public class DialogueManager : MonoBehaviour
             choice.next.Play();
     }
 
+    // 지금 대화를 바로 닫음 (이어지는 대화·실행 없이). 오프닝 건너뛰기용
+    public void ForceClose()
+    {
+        if (!IsOpen) return;
+        if (typeRoutine != null) StopCoroutine(typeRoutine);
+        typing = false;
+        HideChoices();
+        onEnd = null;
+        EndDialogue();
+    }
+
     // ───────── 대화 끝 ─────────
     void EndDialogue()
     {

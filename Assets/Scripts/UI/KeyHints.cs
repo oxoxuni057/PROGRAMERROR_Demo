@@ -13,6 +13,7 @@ public class KeyHints : MonoBehaviour
 
     const string Walk = "WASD·방향키 이동    Shift 달리기    E 조사·대화    Tab 지침서    Esc 일시정지    H 도움말 숨기기";
     const string Talk = "E·Space 다음    W·S 선택지 고르기";
+    const string Opening = "E·Space 다음    Q 오프닝 건너뛰기";
     const string Book = "A·D 쪽 넘기기    Tab·Esc 닫기";
 
     Text label;
@@ -42,6 +43,7 @@ public class KeyHints : MonoBehaviour
         if (!hidden && !inTitle && Time.timeScale > 0f)
         {
             if (RuleBook.IsOpen) text = Book;
+            else if (StoryDirector.CanSkipOpening) text = Opening;
             else if (DialogueManager.Instance != null && DialogueManager.Instance.IsOpen) text = Talk;
             else text = Walk;
         }

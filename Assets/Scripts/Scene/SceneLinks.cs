@@ -19,6 +19,8 @@ using UnityEngine.SceneManagement;
 //              그림이 아직 없어서 색깔 네모로 보임 (이름에 친구/학생/??? 등이 들어가면 색이 바뀜)
 //  - 종류 조사 : 대화와 같지만 안 보이는 조사 지점 (칠판, 게시판, 거울 등). [표시] 기본 "조사하기"
 //  - 종류 규칙 : 바닥의 종이. 주우면 [메시지] = 규칙 id(rules.csv)가 지침서에 적힘. [이유] = 주울 때 나오는 한 줄(비우면 기본)
+//  - 종류 표시 : 노란 화살표 ("여기로 가세요"). [조건]일 때만 보임. 조사 지점에는 작은 화살표가 자동으로 붙음
+//  - 종류 글씨 : 맵 위에 [메시지] 글자를 씀 (칠판의 이름 등). [조건]일 때만 보임
 //  - 종류 구역대사 : 밟으면 [메시지] = 대사 표 id 대화가 한 번 나옴 ([조건]일 때만)
 //  - 좌표는 Unity 월드 좌표 (1 = 한 칸). 씬 칸이 #으로 시작하면 메모
 public static class SceneLinks
@@ -99,6 +101,7 @@ public static class SceneLinks
                 {
                     AddTrigger(go, r.size);
                     if (r.kind == "대화") AddPlaceholder(go, r.size, ColorOf(r.name));
+                    else TableMarker.AddArrow(go, new Vector2(0f, r.size.y * 0.5f + 0.2f), 1f, new Color(1f, 0.85f, 0.3f, 0.9f));
                     go.AddComponent<TableTalk>().Setup(r.message);
                     go.GetComponent<TableTalk>().SetPrompt(string.IsNullOrEmpty(r.show) ? (r.kind == "대화" ? "말 걸기" : "조사하기") : r.show);
                     go.AddComponent<TableCondition>().Setup(r.condition);
@@ -119,6 +122,18 @@ public static class SceneLinks
                 {
                     AddTrigger(go, r.size);
                     go.AddComponent<TableTalkZone>().Setup(r.message, r.condition);
+                    break;
+                }
+                case "표시":
+                {
+                    TableMarker.AddArrow(go, Vector2.zero, 1.6f, new Color(1f, 0.85f, 0.2f));
+                    go.AddComponent<TableCondition>().Setup(r.condition);
+                    break;
+                }
+                case "글씨":
+                {
+                    TableMarker.AddText(go, r.message, new Color(0.95f, 0.95f, 0.9f));
+                    go.AddComponent<TableCondition>().Setup(r.condition);
                     break;
                 }
                 case "도착":

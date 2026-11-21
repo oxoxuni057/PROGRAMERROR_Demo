@@ -63,6 +63,8 @@ static class SceneLinksPreview
                 case "조사":
                 case "규칙":
                 case "구역대사":
+                case "표시":
+                case "글씨":
                     Handles.color = Color.yellow;
                     Handles.DrawWireCube(p, r.size);
                     style.normal.textColor = Color.yellow;

@@ -20,6 +20,9 @@ using UnityEngine.UI;
 //     wake:초                                 N초 뒤 PROGRAM ERROR 암전과 컷신 배경을 걷음 (점검 세계로 깨어남)
 //     checkpoint                              지금 위치·플래그·지침서를 체크포인트로 저장
 //     chapter_end                             암전 → [CHAPTER 1 END] → 아무 키나 누르면 타이틀로
+//
+// ③ 오프닝 건너뛰기: 오프닝~??? 대화 중에 Q → 바로 점검 세계에서 움직일 수 있는 상태로
+//    (??? 대화 끝에서 하는 일 = SkipActions 를 대신 실행)
 public class StoryDirector : MonoBehaviour
 {
     public static StoryDirector Instance { get; private set; }
@@ -32,12 +35,18 @@ public class StoryDirector : MonoBehaviour
     static List<Row> rows;
     static readonly HashSet<string> played = new HashSet<string>();   // 이미 나온 시작 대사
 
+    const string SkipActions = "inspection; rule:common_1; flag:met_unknown; checkpoint";
+    static bool openingRunning;   // 컷신 배경으로 시작한 오프닝이 진행 중
+
+    // 지금 Q로 오프닝을 건너뛸 수 있는지 (KeyHints가 안내 글자에 씀)
+    public static bool CanSkipOpening => openingRunning && !GameFlags.Has("met_unknown");
+
     Image cutsceneBlack;
     Text endText;
     bool ending;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    static void ResetOnPlay() { rows = null; played.Clear(); }
+    static void ResetOnPlay() { rows = null; played.Clear(); openingRunning = false; }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
     static void Bootstrap()
@@ -68,6 +77,7 @@ public class StoryDirector : MonoBehaviour
         if (scene.name == "Title")   // 타이틀로 돌아오면 처음 상태로 (점검 색·배경 잡음도 꺼짐)
         {
             played.Clear();
+            openingRunning = false;
             SetCutscene(false);
             GameFlags.Restore(new string[0]);
             RuleBook.Restore(null);
@@ -82,9 +92,37 @@ public class StoryDirector : MonoBehaviour
             if (!DialogueTable.CheckCondition(r.cond)) continue;
 
             played.Add(r.talkId);
-            if (r.cutscene) SetCutscene(true);   // 씬이 밝아지기 전에 바로 가림
+            if (r.cutscene) { SetCutscene(true); openingRunning = true; }   // 씬이 밝아지기 전에 바로 가림
             StartCoroutine(PlayLater(r.talkId));
             return;   // 한 씬에 한 번에 하나만
+        }
+    }
+
+    void Update()
+    {
+        if (!CanSkipOpening) return;
+        var kb = UnityEngine.InputSystem.Keyboard.current;
+        if (kb != null && kb.qKey.wasPressedThisFrame) SkipOpening();
+    }
+
+    void SkipOpening()
+    {
+        Debug.Log("[이야기] 오프닝 건너뛰기");
+        openingRunning = false;
+        StopAllCoroutines();   // 아직 안 나온 시작 대사, wake 대기 취소
+        if (DialogueManager.Instance != null) DialogueManager.Instance.ForceClose();
+        SetCutscene(false);
+        DialogueTable.RunActions(SkipActions);
+        StartCoroutine(ClearBlackoutForAWhile());
+    }
+
+    // PROGRAM ERROR 연출 도중에 건너뛰면 암전이 늦게 다시 켜질 수 있어서, 몇 초 동안 계속 걷어 줌
+    IEnumerator ClearBlackoutForAWhile()
+    {
+        for (float t = 0f; t < 3.5f; t += 0.25f)
+        {
+            if (GlitchEffect.Instance != null) GlitchEffect.Instance.HideBlackout();
+            yield return new WaitForSecondsRealtime(0.25f);
         }
     }
 
